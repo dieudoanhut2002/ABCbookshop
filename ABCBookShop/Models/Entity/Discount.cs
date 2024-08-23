@@ -3,18 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ABCBookShop.Models.Entity
 {
-    /// <summary>
-    /// Quản lý lịch sử lương của các nhân viên
-    /// </summary>
-    [Table(nameof(Salary))]
-    public class Salary
+    [Table(nameof(Discount))]
+    public class Discount
     {
         [Key]
         public Guid Id { get; set; }
-        public Guid StaffID { get; set; }
-        public decimal MonthlySalary { get; set; }
         public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal DiscountPercent { get; set; }
         public string Reason { get; set; } = string.Empty;
     }
 }

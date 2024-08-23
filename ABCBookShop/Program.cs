@@ -1,9 +1,21 @@
-var builder = WebApplication.CreateBuilder(args);
+using ABCBookShop.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+string? a = builder.Configuration.GetConnectionString("ABCBookDb");
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-var app = builder.Build();
+builder.Services.AddDbContextPool<ABCBookShopContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ABCBookDb"));
+    options.EnableSensitiveDataLogging();
+    options.EnableDetailedErrors();
+    options.LogTo((sql) => Debug.WriteLine(sql), LogLevel.Debug);
+});
+
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

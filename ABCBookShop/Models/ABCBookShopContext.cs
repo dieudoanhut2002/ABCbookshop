@@ -1,15 +1,22 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ABCBookShop.Models.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ABCBookShop.Models
 {
     public class ABCBookShopContext : DbContext
     {
-        public string connectionString = "workstation id=ABCbookshop.mssql.somee.com;packet size=4096;user id=giahamvui0001_SQLLogin_1;pwd=s6nvbl5fxa;data source=ABCbookshop.mssql.somee.com;persist security info=False;initial catalog=ABCbookshop;TrustServerCertificate=True";
-        public ABCBookShopContext(DbContextOptions<ABCBookShopContext> connectionString) : base(connectionString)
+        public ABCBookShopContext(DbContextOptions<ABCBookShopContext> options) : base(options)
         {
-
         }
-
-
+        public DbSet<Book> Books { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Discount> Discounts { get; set; }
+        public DbSet<Price> Prices { get; set; }
+        public DbSet<Provider> Providers { get; set; }
+        public DbSet<Publisher> Publishers { get; set; }
+        public DbSet<Salary> Salaries { get; set; }
+        public DbSet<ShelvesLocation> ShelvesLocations { get; set; }
+        public DbSet<Staff> Staffs { get; set; }
+        public DbSet<Store> Stores { get; set; }
     }
 }

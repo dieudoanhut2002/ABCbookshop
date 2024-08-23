@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ABCBookShop.Models.Entity
 {
-    [Table(nameof(Book))]
+    [Table(nameof(Store))]
     public class Store
     {
         [Key]
