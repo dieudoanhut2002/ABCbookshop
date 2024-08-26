@@ -1,7 +1,12 @@
-﻿namespace ABCBookShop.Models.Entity
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ABCBook.Model.Entity
 {
+    [Table(nameof(Provider))]
     public class Provider
     {
+        [Key]
         public Guid Id { get; set; }
         public required string Name { get; set; }
         public required string ContactPerson { get; set; }

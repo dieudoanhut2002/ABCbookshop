@@ -1,4 +1,3 @@
-using ABCBookShop.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
@@ -7,7 +6,7 @@ string? a = builder.Configuration.GetConnectionString("ABCBookDb");
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContextPool<ABCBookShopContext>(options =>
+builder.Services.AddDbContextPool<ABCBook.Model.ABCBookShopContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("ABCBookDb"));
     options.EnableSensitiveDataLogging();

@@ -1,4 +1,4 @@
-﻿namespace ABCBookShop.Models.Enum
+﻿namespace ABCBook.Model.Enum
 {
     public enum StaffPosition : int
     {

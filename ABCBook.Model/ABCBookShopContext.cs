@@ -1,7 +1,7 @@
-﻿using ABCBookShop.Models.Entity;
+﻿using ABCBook.Model.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ABCBookShop.Models
+namespace ABCBook.Model
 {
     public class ABCBookShopContext : DbContext
     {

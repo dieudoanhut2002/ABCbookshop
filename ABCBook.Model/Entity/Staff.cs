@@ -1,8 +1,8 @@
-﻿using ABCBookShop.Models.Enum;
+﻿using ABCBook.Model.Enum;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ABCBookShop.Models.Entity
+namespace ABCBook.Model.Entity
 {
     /// <summary>
     /// Bảng quản lý nhân viên các chi nhánh
@@ -15,7 +15,7 @@ namespace ABCBookShop.Models.Entity
         public Guid SalaryID { get; set; }
         public Guid StoreID { get; set; }
         public required string Name { get; set; }
-        public Sex sex { get; set; }
+        public Gender gender { get; set; }
         public DateTime DateOfBirth { get; set; }
         public DateTime LabourContractDate { get; set; }
         public DateTime? QuitDate { get; set; }

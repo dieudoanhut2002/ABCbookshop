@@ -1,12 +1,11 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ABCBookShop.Migrations
+namespace ABCBook.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDb210824 : Migration
+    public partial class AddColumnProvider260824 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -60,7 +59,7 @@ namespace ABCBookShop.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Providers",
+                name: "Provider",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -72,7 +71,7 @@ namespace ABCBookShop.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Providers", x => x.Id);
+                    table.PrimaryKey("PK_Provider", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -129,7 +128,7 @@ namespace ABCBookShop.Migrations
                     SalaryID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StoreID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    sex = table.Column<int>(type: "int", nullable: false),
+                    gender = table.Column<int>(type: "int", nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LabourContractDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     QuitDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -180,11 +179,6 @@ namespace ABCBookShop.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Book", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Book_Discount_DiscountId",
-                        column: x => x.DiscountId,
-                        principalTable: "Discount",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -206,7 +200,7 @@ namespace ABCBookShop.Migrations
                 name: "Product");
 
             migrationBuilder.DropTable(
-                name: "Providers");
+                name: "Provider");
 
             migrationBuilder.DropTable(
                 name: "Publisher");

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ABCBookShop.Models.Entity
+namespace ABCBook.Model.Entity
 {
     [Table(nameof(Publisher))]
     public class Publisher
