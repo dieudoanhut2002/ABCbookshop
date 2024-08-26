@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="API\Service\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\ABCBook.Model\ABCBook.Model.csproj" />
   </ItemGroup>
 
