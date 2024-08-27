@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABCBookAPIService", "ABCBoo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABCBook.Model", "ABCBook.Model\ABCBook.Model.csproj", "{BC1E5F7F-6E24-4353-BCF1-ECA9BE38F3B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABCBook.API", "ABCBook.API\ABCBook.API.csproj", "{BFB81FB8-D57D-4C27-8B3A-31B4C8597AD1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ABCBook.API", "ABCBook.API\ABCBook.API.csproj", "{BFB81FB8-D57D-4C27-8B3A-31B4C8597AD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ABCBook.FEService", "ABCBook.FEService\ABCBook.FEService.csproj", "{1DA40335-F6E0-4FD4-B993-FFE1B5350A89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{BFB81FB8-D57D-4C27-8B3A-31B4C8597AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFB81FB8-D57D-4C27-8B3A-31B4C8597AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFB81FB8-D57D-4C27-8B3A-31B4C8597AD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DA40335-F6E0-4FD4-B993-FFE1B5350A89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DA40335-F6E0-4FD4-B993-FFE1B5350A89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DA40335-F6E0-4FD4-B993-FFE1B5350A89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DA40335-F6E0-4FD4-B993-FFE1B5350A89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
