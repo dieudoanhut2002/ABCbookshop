@@ -1,0 +1,77 @@
+@model ShiftOpenDto
+@{
+    ViewData["Title"] = "Mở ca làm việc POS";
+    var registers = ViewBag.Registers as List<POSRegister> ?? new List<POSRegister>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5">
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-primary text-white py-3 text-center">
+                <i class="bi bi-clock-history fs-1 mb-2 d-block"></i>
+                <h4 class="card-title mb-0 fw-bold">MỞ CA LÀM VIỆC POS</h4>
+                <small class="opacity-75">Kiểm đếm tiền lẻ đầu ca trong két trước khi kích hoạt quầy bán</small>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Open" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Quầy thu ngân (POS Register) <span class="text-danger">*</span></label>
+                        <select asp-for="RegisterId" class="form-select" id="selectRegister" required onchange="onRegisterChange(this)">
+                            @foreach (var r in registers)
+                            {
+                                <option value="@r.Id" data-store="@r.StoreId">@r.Store?.Name - [@r.RegisterCode] @r.Name</option>
+                            }
+                        </select>
+                        <input type="hidden" asp-for="StoreId" id="inputStoreId" />
+                        <span asp-validation-for="RegisterId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="OpeningCash" class="form-label fw-semibold">Tiền mặt ban đầu trong két (VNĐ) <span class="text-danger">*</span></label>
+                        <input asp-for="OpeningCash" class="form-control text-end fs-5 fw-bold text-primary" type="number" step="1000" id="inputOpeningCash" required />
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" onclick="setOpening(500000)">500,000 ₫</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" onclick="setOpening(1000000)">1,000,000 ₫</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" onclick="setOpening(2000000)">2,000,000 ₫</button>
+                        </div>
+                        <span asp-validation-for="OpeningCash" class="text-danger small"></span>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-4">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Số tiền này sẽ được dùng để đối soát doanh thu tiền mặt và tiền thừa trong két khi kết thúc ca.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold fs-5">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Bắt đầu ca làm việc
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">
+                        Quay lại danh sách ca
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function setOpening(amount) {
+            document.getElementById('inputOpeningCash').value = amount;
+        }
+
+        function onRegisterChange(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            const storeId = opt.getAttribute('data-store');
+            document.getElementById('inputStoreId').value = storeId;
+        }
+
+        // Init store id
+        const sel = document.getElementById('selectRegister');
+        if (sel) onRegisterChange(sel);
+    </script>
+}

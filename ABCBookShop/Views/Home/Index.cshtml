@@ -1,8 +1,156 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "ABCBookShop - Chuỗi Nhà sách & Văn phòng phẩm hàng đầu";
+    var featured = ViewBag.FeaturedProducts as List<ProductDto> ?? new List<ProductDto>();
+    var newArrivals = ViewBag.NewArrivals as List<ProductDto> ?? new List<ProductDto>();
+    var categories = ViewBag.Categories as List<CategoryDto> ?? new List<CategoryDto>();
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Banner Carousel -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-primary text-white position-relative" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+    <div class="card-body p-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">
+                    <i class="bi bi-stars me-1"></i> KHUYẾN MÃI MÙA TỰU TRƯỜNG & SÁCH MỚI 2026
+                </span>
+                <h1 class="display-4 fw-bold mb-3">Tri thức hội tụ,<br>Vươn tầm tương lai</h1>
+                <p class="lead opacity-90 mb-4">
+                    Hệ thống chuỗi nhà sách ABCBookShop với hơn 100,000 tựa sách, văn phòng phẩm cao cấp, thiết bị giáo dục và quà lưu niệm độc đáo.
+                </p>
+                <div class="d-flex gap-3">
+                    <a asp-action="Books" class="btn btn-warning btn-lg px-4 fw-bold shadow-sm">
+                        <i class="bi bi-book me-1"></i> Khám phá tủ sách ngay
+                    </a>
+                    <a asp-action="OrderTracking" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-truck me-1"></i> Tra cứu đơn hàng
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center d-none d-lg-block">
+                <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=60" alt="Books" class="img-fluid rounded-4 shadow-lg" style="max-height: 280px; object-fit: cover;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Quick Navigation -->
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-grid-fill text-primary me-2"></i>Danh mục Nổi bật</h4>
+        <a asp-action="Books" class="text-primary text-decoration-none small fw-semibold">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-3">
+        @foreach (var c in categories.Take(6))
+        {
+            <div class="col-6 col-md-4 col-lg-2">
+                <a asp-action="Books" asp-route-categoryId="@c.Id" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm text-center p-3 h-100 hover-card bg-white">
+                        <i class="bi bi-journal-bookmark fs-2 text-primary mb-2"></i>
+                        <div class="fw-semibold text-dark small text-truncate">@c.Name</div>
+                        <small class="text-muted" style="font-size: 11px;">@c.ProductsCount sản phẩm</small>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Featured Best-Sellers -->
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-fire text-danger me-2"></i>Sách Bán Chạy Nhất</h4>
+            <small class="text-muted">Được bạn đọc toàn quốc yêu thích và đánh giá cao nhất</small>
+        </div>
+        <a asp-action="Books" class="text-primary text-decoration-none small fw-semibold">Xem thêm <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-3">
+        @foreach (var p in featured)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden d-flex flex-column">
+                    <a asp-action="Details" asp-route-id="@p.Id" class="text-decoration-none">
+                        <div class="bg-light text-center p-3" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                            @if (!string.IsNullOrEmpty(p.ImageUrl))
+                            {
+                                <img src="@p.ImageUrl" alt="@p.Title" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-book-half fs-1 text-secondary opacity-50"></i>
+                            }
+                        </div>
+                    </a>
+                    <div class="card-body p-3 d-flex flex-column">
+                        <small class="text-muted mb-1 text-truncate">@p.CategoryName</small>
+                        <h6 class="card-title fw-bold text-dark text-truncate mb-2" title="@p.Title">
+                            <a asp-action="Details" asp-route-id="@p.Id" class="text-dark text-decoration-none">@p.Title</a>
+                        </h6>
+                        <div class="mt-auto pt-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-5 fw-bold text-danger">@p.SellingPrice.ToString("N0") ₫</span>
+                                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
+                                    <input type="hidden" name="productId" value="@p.Id" />
+                                    <input type="hidden" name="quantity" value="1" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Thêm vào giỏ">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- New Arrivals -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-sparkles text-warning me-2"></i>Tựa Sách Mới Xuất Bản</h4>
+            <small class="text-muted">Cập nhật liên tục những đầu sách mới phát hành trên toàn hệ thống</small>
+        </div>
+        <a asp-action="Books" class="text-primary text-decoration-none small fw-semibold">Xem thêm <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row g-3">
+        @foreach (var p in newArrivals)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden d-flex flex-column">
+                    <a asp-action="Details" asp-route-id="@p.Id" class="text-decoration-none">
+                        <div class="bg-light text-center p-3" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                            @if (!string.IsNullOrEmpty(p.ImageUrl))
+                            {
+                                <img src="@p.ImageUrl" alt="@p.Title" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-journal-text fs-1 text-secondary opacity-50"></i>
+                            }
+                        </div>
+                    </a>
+                    <div class="card-body p-3 d-flex flex-column">
+                        <small class="text-muted mb-1 text-truncate">@p.CategoryName</small>
+                        <h6 class="card-title fw-bold text-dark text-truncate mb-2" title="@p.Title">
+                            <a asp-action="Details" asp-route-id="@p.Id" class="text-dark text-decoration-none">@p.Title</a>
+                        </h6>
+                        <div class="mt-auto pt-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-5 fw-bold text-danger">@p.SellingPrice.ToString("N0") ₫</span>
+                                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
+                                    <input type="hidden" name="productId" value="@p.Id" />
+                                    <input type="hidden" name="quantity" value="1" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Thêm vào giỏ">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>

@@ -1,0 +1,254 @@
+@model ProductCreateUpdateDto
+@{
+    ViewData["Title"] = "Chỉnh sửa Sản phẩm: " + Model.Title;
+    var categories = ViewBag.Categories as List<CategoryDto> ?? new List<CategoryDto>();
+}
+
+<div class="container-fluid py-3">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Product" asp-action="Index">Danh mục sản phẩm</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa: @Model.SKU</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary mb-0"><i class="bi bi-pencil-square me-2"></i>Chỉnh sửa Sản phẩm: @Model.Title</h3>
+            <small class="text-muted">Cập nhật thông tin mã vạch, giá niêm yết và chi tiết sách</small>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h6 class="alert-heading fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng kiểm tra lại thông tin:</h6>
+            <div asp-validation-summary="All" class="text-danger small mb-0"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="productEditForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="row g-3">
+            <!-- Cột trái: Thông tin nhận diện & Chi tiết -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title text-dark mb-0"><i class="bi bi-tag-fill text-primary me-2"></i>Thông tin Định danh</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="SKU" class="form-label fw-bold">Mã SKU <span class="text-danger">*</span></label>
+                                <input asp-for="SKU" class="form-control font-monospace" required />
+                                <span asp-validation-for="SKU" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Barcode" class="form-label fw-bold">Mã vạch (Barcode)</label>
+                                <input asp-for="Barcode" class="form-control font-monospace" placeholder="Mã vạch..." />
+                                <span asp-validation-for="Barcode" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Title" class="form-label fw-bold">Tên sản phẩm / Tiêu đề Sách <span class="text-danger">*</span></label>
+                                <input asp-for="Title" class="form-control form-control-lg" required />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="ProductType" class="form-label fw-bold">Loại hàng hóa</label>
+                                <select asp-for="ProductType" class="form-select" id="selProductType">
+                                    <option value="1">Sách</option>
+                                    <option value="2">Văn phòng phẩm</option>
+                                    <option value="3">Quà lưu niệm</option>
+                                    <option value="4">Hàng bán lẻ khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="CategoryId" class="form-label fw-bold">Danh mục sản phẩm</label>
+                                <select asp-for="CategoryId" class="form-select">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <option value="@cat.Id" selected="@(Model.CategoryId == cat.Id)">@cat.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Unit" class="form-label fw-bold">Đơn vị tính</label>
+                                <input asp-for="Unit" class="form-control" />
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-bold">Mô tả / Tóm tắt nội dung</label>
+                                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Chi tiết Sách -->
+                <div class="card shadow-sm border-0 mb-3" id="cardBookDetail">
+                    <div class="card-header bg-primary-subtle py-3 border-0">
+                        <h5 class="card-title text-primary mb-0"><i class="bi bi-book me-2"></i>Thuộc tính Sách</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Author" class="form-label fw-bold">Tác giả</label>
+                                <input asp-for="Author" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Publisher" class="form-label fw-bold">Nhà xuất bản</label>
+                                <input asp-for="Publisher" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ISBN" class="form-label fw-bold">Mã số ISBN</label>
+                                <input asp-for="ISBN" class="form-control font-monospace" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PublicationYear" class="form-label fw-bold">Năm xuất bản</label>
+                                <input asp-for="PublicationYear" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PageCount" class="form-label fw-bold">Số trang</label>
+                                <input asp-for="PageCount" type="number" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Language" class="form-label fw-bold">Ngôn ngữ</label>
+                                <input asp-for="Language" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="CoverType" class="form-label fw-bold">Loại bìa</label>
+                                <select asp-for="CoverType" class="form-select">
+                                    <option value="Bìa mềm">Bìa mềm</option>
+                                    <option value="Bìa cứng">Bìa cứng</option>
+                                    <option value="Bìa gập">Bìa gập</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Giá, Thuế & Tồn kho -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title text-dark mb-0"><i class="bi bi-cash-stack text-success me-2"></i>Chính sách Giá & Thuế</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="CostPrice" class="form-label fw-bold">Giá vốn nhập (VND)</label>
+                            <div class="input-group">
+                                <input asp-for="CostPrice" type="number" step="1000" class="form-control text-end font-monospace" id="numCostPrice" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SellingPrice" class="form-label fw-bold">Giá bán niêm yết (VND) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="SellingPrice" type="number" step="1000" class="form-control text-end font-monospace fw-bold text-success fs-5" id="numSellingPrice" required />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="VatRate" class="form-label fw-bold">Thuế suất VAT (%)</label>
+                            <div class="input-group">
+                                <input asp-for="VatRate" type="number" step="0.5" class="form-control text-end font-monospace" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded border">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="text-muted">Chênh lệch gộp:</small>
+                                <span class="fw-bold font-monospace" id="lblMarginAmount">0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Tỷ suất biên lợi nhuận:</small>
+                                <span class="fw-bold font-monospace text-primary" id="lblMarginPercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title text-dark mb-0"><i class="bi bi-shield-check text-info me-2"></i>Tồn kho & Trạng thái</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="LowStockThreshold" class="form-label fw-bold">Ngưỡng cảnh báo hết hàng</label>
+                            <div class="input-group">
+                                <input asp-for="LowStockThreshold" type="number" class="form-control text-end font-monospace" />
+                                <span class="input-group-text">sản phẩm</span>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="IsActive" id="chkIsActive" />
+                            <label class="form-check-label fw-bold" for="chkIsActive">Đang kinh doanh</label>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light p-3">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fs-6">
+                            <i class="bi bi-check2-circle me-1"></i>Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selProductType = document.getElementById('selProductType');
+            const cardBookDetail = document.getElementById('cardBookDetail');
+            const numCostPrice = document.getElementById('numCostPrice');
+            const numSellingPrice = document.getElementById('numSellingPrice');
+            const lblMarginAmount = document.getElementById('lblMarginAmount');
+            const lblMarginPercent = document.getElementById('lblMarginPercent');
+
+            function updateProductTypeDisplay() {
+                if (selProductType.value === "1") {
+                    cardBookDetail.style.display = 'block';
+                } else {
+                    cardBookDetail.style.display = 'none';
+                }
+            }
+            selProductType.addEventListener('change', updateProductTypeDisplay);
+            updateProductTypeDisplay();
+
+            function calculateProfit() {
+                const cost = parseFloat(numCostPrice.value) || 0;
+                const sell = parseFloat(numSellingPrice.value) || 0;
+                const margin = sell - cost;
+                lblMarginAmount.textContent = margin.toLocaleString('vi-VN') + ' đ';
+
+                if (sell > 0) {
+                    const percent = (margin / sell) * 100;
+                    lblMarginPercent.textContent = percent.toFixed(1) + '%';
+                    lblMarginPercent.className = percent >= 20 ? 'fw-bold font-monospace text-success' : 'fw-bold font-monospace text-warning';
+                } else {
+                    lblMarginPercent.textContent = '0%';
+                }
+            }
+
+            numCostPrice.addEventListener('input', calculateProfit);
+            numSellingPrice.addEventListener('input', calculateProfit);
+            calculateProfit();
+        });
+    </script>
+}

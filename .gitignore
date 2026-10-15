@@ -396,3 +396,16 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+.idea/
+
+# Local Secrets & Environment Configuration
+appsettings.*.local.json
+secrets.json
+*.env
+*.env.*
+*.secret
+
+# Reports & Temp Exports
+**/temp_reports/*
+**/logs/*
+

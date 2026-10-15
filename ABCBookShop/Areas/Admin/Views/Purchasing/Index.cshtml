@@ -1,0 +1,201 @@
+@model List<GoodsReceiptNoteDto>
+@{
+    ViewData["Title"] = "Quản lý Nhập hàng & Phiếu nhập kho (GRN)";
+    var warehouses = ViewBag.Warehouses as List<WarehouseDto> ?? new List<WarehouseDto>();
+    var currentWarehouseId = ViewBag.CurrentWarehouseId as Guid?;
+    var totalAmountAll = Model?.Sum(x => x.TotalAmount) ?? 0;
+    var totalPaidAll = Model?.Sum(x => x.PaidAmount) ?? 0;
+    var totalDebtAll = totalAmountAll - totalPaidAll;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Quản lý Nhập hàng & Phiếu nhập kho (GRN)</h2>
+        <p class="text-muted small mb-0">Theo dõi nguồn hàng từ Nhà cung cấp, biến động giá nhập, công nợ và tự động cập nhật sổ cái tồn kho.</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Suppliers" class="btn btn-outline-secondary">
+            <i class="bi bi-people me-1"></i> Danh bạ NCC & Công nợ
+        </a>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Lập phiếu nhập kho mới
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">Tổng giá trị đã nhập</div>
+                <div class="fs-4 fw-bold text-primary">@totalAmountAll.ToString("N0") ₫</div>
+                <div class="text-muted small">Từ @(Model?.Count ?? 0) phiếu nhập</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-4 border-success">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">Đã thanh toán cho NCC</div>
+                <div class="fs-4 fw-bold text-success">@totalPaidAll.ToString("N0") ₫</div>
+                <div class="text-muted small">Tiền mặt / Chuyển khoản ngân hàng</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-4 border-warning">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">Công nợ nhập hàng tồn dư</div>
+                <div class="fs-4 fw-bold text-danger">@totalDebtAll.ToString("N0") ₫</div>
+                <div class="text-muted small">Ghi nhận vào công nợ NCC</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="warehouseId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả kho nhận hàng --</option>
+                    @foreach (var w in warehouses)
+                    {
+                        <!option value="@w.Id" @(currentWarehouseId == w.Id ? "selected" : "")>@w.Code - @w.Name</!option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- GRN List -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã phiếu (GRN)</th>
+                    <th>Ngày nhập</th>
+                    <th>Nhà cung cấp</th>
+                    <th>Kho lưu trữ</th>
+                    <th>Hóa đơn NCC</th>
+                    <th class="text-end">Tổng tiền (VNĐ)</th>
+                    <th class="text-end">Đã trả (VNĐ)</th>
+                    <th class="text-end">Còn nợ (VNĐ)</th>
+                    <th class="text-center">Chi tiết hàng hóa</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Chưa có phiếu nhập kho nào phù hợp.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var note in Model)
+                    {
+                        var debt = note.TotalAmount - note.PaidAmount;
+                        <tr>
+                            <td>
+                                <span class="badge bg-dark font-monospace">@note.GRNCode</span>
+                            </td>
+                            <td>
+                                <div>@note.ReceivedDate.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                                <small class="text-muted">@note.ReceivedDate.ToLocalTime().ToString("HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@note.ProviderName</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@note.WarehouseName</span>
+                            </td>
+                            <td>
+                                @(string.IsNullOrEmpty(note.SupplierInvoiceNo) ? "---" : note.SupplierInvoiceNo)
+                            </td>
+                            <td class="text-end fw-bold text-primary">
+                                @note.TotalAmount.ToString("N0") ₫
+                            </td>
+                            <td class="text-end text-success">
+                                @note.PaidAmount.ToString("N0") ₫
+                            </td>
+                            <td class="text-end fw-semibold @(debt > 0 ? "text-danger" : "text-muted")">
+                                @debt.ToString("N0") ₫
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#items-@note.Id" aria-expanded="false">
+                                    <i class="bi bi-list-check me-1"></i> @(note.Items?.Count ?? 0) mặt hàng
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="items-@note.Id">
+                            <td colspan="9" class="p-3 bg-light">
+                                <div class="card border">
+                                    <div class="card-header bg-white py-2 small fw-semibold">
+                                        Chi tiết mặt hàng của phiếu nhập <strong>@note.GRNCode</strong>
+                                        @if (!string.IsNullOrEmpty(note.Note))
+                                        {
+                                            <span class="ms-3 text-muted">Ghi chú: @note.Note</span>
+                                        }
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-0">
+                                            <thead>
+                                                <tr class="table-light">
+                                                    <th>Mã SKU</th>
+                                                    <th>Tên hàng hóa</th>
+                                                    <th class="text-end">Số lượng nhập</th>
+                                                    <th class="text-end">Đơn giá nhập (VNĐ)</th>
+                                                    <th class="text-end">Thành tiền (VNĐ)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in note.Items)
+                                                {
+                                                    <tr>
+                                                        <td><code>@item.ProductSKU</code></td>
+                                                        <td>@item.ProductTitle</td>
+                                                        <td class="text-end fw-semibold">@item.ReceivedQuantity.ToString("N0")</td>
+                                                        <td class="text-end">@item.UnitCost.ToString("N0") ₫</td>
+                                                        <td class="text-end fw-bold">@item.LineTotal.ToString("N0") ₫</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

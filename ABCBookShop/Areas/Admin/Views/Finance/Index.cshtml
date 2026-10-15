@@ -1,0 +1,234 @@
+@model PagedResult<ExpenseVoucherDto>
+@{
+    ViewData["Title"] = "Quản lý Chi phí Vận hành (OPEX)";
+    var stores = ViewBag.Stores as List<Store> ?? new List<Store>();
+    var categories = ViewBag.Categories as List<ExpenseCategoryDto> ?? new List<ExpenseCategoryDto>();
+    var currentStoreId = ViewBag.CurrentStoreId as Guid?;
+    var currentCategoryId = ViewBag.CurrentCategoryId as Guid?;
+    var currentStatus = ViewBag.CurrentStatus as ExpenseStatus?;
+    var totalAmount = Model?.Items?.Sum(i => i.Amount) ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Quản lý Chi phí Vận hành Cửa hàng (OPEX)</h2>
+        <p class="text-muted small mb-0">Ghi nhận phiếu chi tiền mặt, hóa đơn điện nước, mặt bằng, tiếp thị, kiểm soát ngân sách chuỗi.</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Categories" class="btn btn-outline-secondary">
+            <i class="bi bi-tags me-1"></i> Nhóm chi phí
+        </a>
+        <a asp-action="ProfitLoss" class="btn btn-outline-primary">
+            <i class="bi bi-graph-up-arrow me-1"></i> Báo cáo P&L
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewVoucher">
+            <i class="bi bi-plus-circle me-1"></i> Lập phiếu chi mới
+        </button>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <select name="storeId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả cửa hàng --</option>
+                    @foreach (var s in stores)
+                    {
+                        <!option value="@s.Id" @(currentStoreId == s.Id ? "selected" : "")>@s.Name</!option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="categoryId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả nhóm chi phí --</option>
+                    @foreach (var c in categories)
+                    {
+                        <!option value="@c.Id" @(currentCategoryId == c.Id ? "selected" : "")>@c.Name</!option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="fromDate" value="@ViewBag.CurrentFromDate" class="form-control form-control-sm" placeholder="Từ ngày" />
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="toDate" value="@ViewBag.CurrentToDate" class="form-control form-control-sm" placeholder="Đến ngày" />
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary flex-fill">
+                    <i class="bi bi-funnel me-1"></i> Lọc
+                </button>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Expense List Table -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Ngày chi</th>
+                    <th>Cửa hàng</th>
+                    <th>Nhóm chi phí</th>
+                    <th>Người nhận / Đơn vị</th>
+                    <th>Nội dung chi phí</th>
+                    <th class="text-end">Số tiền (VNĐ)</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            Chưa có phiếu chi nào trong kỳ này.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var exp in Model.Items)
+                    {
+                        <tr>
+                            <td><span class="badge bg-dark font-monospace">@exp.VoucherCode</span></td>
+                            <td>@exp.ExpenseDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td><strong>@exp.StoreName</strong></td>
+                            <td><span class="badge bg-secondary">@exp.CategoryName</span></td>
+                            <td class="fw-semibold">@exp.Payee</td>
+                            <td><small class="text-muted">@exp.Description</small></td>
+                            <td class="text-end fw-bold text-danger">@exp.Amount.ToString("N0") ₫</td>
+                            <td class="text-center">
+                                @if (exp.Status == ExpenseStatus.Approved)
+                                {
+                                    <span class="badge bg-success">Đã duyệt chi</span>
+                                }
+                                else if (exp.Status == ExpenseStatus.Pending)
+                                {
+                                    <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                }
+                                else if (exp.Status == ExpenseStatus.Paid)
+                                {
+                                    <span class="badge bg-info text-dark">Đã xuất quỹ</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Từ chối</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (exp.Status == ExpenseStatus.Pending)
+                                {
+                                    <div class="btn-group btn-group-sm">
+                                        <form asp-action="ApproveVoucher" asp-route-id="@exp.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-success" title="Duyệt chi">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="RejectVoucher" asp-route-id="@exp.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="reason" value="Không hợp lệ" />
+                                            <button type="submit" class="btn btn-outline-danger" title="Từ chối">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <small class="text-muted"><i class="bi bi-shield-check text-success"></i></small>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm Phiếu Chi Mới -->
+<div class="modal fade" id="modalNewVoucher" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="CreateVoucher" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Lập phiếu chi phí vận hành (OPEX)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cửa hàng chi trả <span class="text-danger">*</span></label>
+                        <select name="StoreId" class="form-select" required>
+                            @foreach (var s in stores)
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nhóm chi phí <span class="text-danger">*</span></label>
+                        <select name="CategoryId" class="form-select" required>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày phát sinh</label>
+                            <input type="date" name="ExpenseDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số tiền chi (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" name="Amount" class="form-control text-end fw-bold text-danger" step="1000" min="1000" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Người nhận tiền / Đơn vị cung cấp <span class="text-danger">*</span></label>
+                        <input type="text" name="Payee" class="form-control" placeholder="VD: Công ty Điện lực EVN, Chủ nhà cho thuê..." required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Lý do / Nội dung chi phí <span class="text-danger">*</span></label>
+                        <textarea name="Description" class="form-control" rows="3" placeholder="Nhập chi tiết kỳ thanh toán, mục đích sử dụng..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu phiếu chi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

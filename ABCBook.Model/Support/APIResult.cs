@@ -1,4 +1,4 @@
-﻿namespace ABCBook.Model.Support
+namespace ABCBook.Model.Support
 {
     public class APIResult
     {
@@ -12,7 +12,7 @@
         /// <summary>
         /// Mã lỗi cho DEV
         /// </summary>
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
         /// <summary>
         /// ID theo dõi APIResult
         /// </summary>
@@ -20,7 +20,7 @@
         /// <summary>
         /// Thông báo cho DEV
         /// </summary>
-        public string InternalMessage { get; set; }
+        public string InternalMessage { get; set; } = string.Empty;
         /// <summary>
         /// Thông báo cho người dùng
         /// </summary>
@@ -41,6 +41,6 @@
         /// <summary>
         /// chứa dữ liệu trả về
         /// </summary>
-        public TDataResult Data { get; set; } = default(TDataResult);
+        public TDataResult? Data { get; set; } = default;
     }
 }

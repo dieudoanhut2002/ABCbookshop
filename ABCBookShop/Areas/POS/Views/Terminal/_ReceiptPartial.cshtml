@@ -1,0 +1,100 @@
+@model PosOrderReceiptDto
+
+<div class="pos-receipt p-3 font-monospace text-dark" style="max-width: 380px; margin: 0 auto; font-size: 13px; line-height: 1.4;">
+    <div class="text-center mb-3">
+        <h4 class="fw-bold mb-1">ABCBOOKSHOP</h4>
+        <div class="small fw-semibold">@Model.StoreName</div>
+        <div class="small text-muted">@Model.StoreAddress</div>
+        <div class="small text-muted">Hotline: @Model.StorePhone</div>
+        <div class="border-bottom border-dark border-dashed my-2"></div>
+        <h5 class="fw-bold mb-0">HÓA ĐƠN BÁN LẺ</h5>
+        <div class="small">Số HĐ: <strong>@Model.OrderNumber</strong></div>
+        <div class="small text-muted">Ngày: @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</div>
+    </div>
+
+    <div class="small mb-2">
+        <div>Thu ngân: <strong>@Model.CashierName</strong> (@Model.RegisterCode)</div>
+        @if (!string.IsNullOrEmpty(Model.CustomerName))
+        {
+            <div>Khách hàng: <strong>@Model.CustomerName</strong> (@Model.CustomerPhone)</div>
+            @if (Model.CustomerPointsEarned > 0)
+            {
+                <div class="text-success">+ Tích lũy: @Model.CustomerPointsEarned điểm (Tổng điểm hiện tại: @Model.CustomerCurrentPoints)</div>
+            }
+        }
+        else
+        {
+            <div>Khách hàng: <strong>Khách lẻ tại quầy</strong></div>
+        }
+    </div>
+
+    <div class="border-bottom border-dark border-dashed mb-2"></div>
+
+    <table class="w-100 mb-2 small">
+        <thead>
+            <tr class="border-bottom">
+                <th class="text-start pb-1">Tên hàng</th>
+                <th class="text-center pb-1">SL</th>
+                <th class="text-end pb-1">Đ.Giá</th>
+                <th class="text-end pb-1">T.Tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td colspan="4" class="pt-1 fw-bold">@item.ProductName</td>
+                </tr>
+                <tr class="border-bottom border-light">
+                    <td class="text-muted pb-1"><code>@item.SKU</code></td>
+                    <td class="text-center pb-1">@item.Quantity.ToString("N0")</td>
+                    <td class="text-end pb-1">@item.UnitPrice.ToString("N0")</td>
+                    <td class="text-end pb-1 fw-semibold">@item.LineTotal.ToString("N0")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="border-bottom border-dark border-dashed mb-2"></div>
+
+    <div class="small">
+        <div class="d-flex justify-content-between mb-1">
+            <span>Tổng tiền hàng:</span>
+            <span>@Model.SubTotal.ToString("N0") ₫</span>
+        </div>
+        @if (Model.DiscountAmount > 0)
+        {
+            <div class="d-flex justify-content-between mb-1 text-danger">
+                <span>Giảm giá:</span>
+                <span>-@Model.DiscountAmount.ToString("N0") ₫</span>
+            </div>
+        }
+        <div class="d-flex justify-content-between fw-bold fs-6 border-top border-dark pt-1 mb-1">
+            <span>TỔNG THANH TOÁN:</span>
+            <span>@Model.TotalAmount.ToString("N0") ₫</span>
+        </div>
+
+        @foreach (var p in Model.Payments)
+        {
+            <div class="d-flex justify-content-between text-muted mb-1">
+                <span>@p.PaymentMethod:</span>
+                <span>@p.Amount.ToString("N0") ₫</span>
+            </div>
+        }
+
+        @if (Model.ChangeAmount > 0)
+        {
+            <div class="d-flex justify-content-between mb-1 fw-semibold">
+                <span>Tiền thối lại:</span>
+                <span>@Model.ChangeAmount.ToString("N0") ₫</span>
+            </div>
+        }
+    </div>
+
+    <div class="border-bottom border-dark border-dashed my-2"></div>
+
+    <div class="text-center small">
+        <div class="fw-semibold">Cảm ơn Quý khách & Hẹn gặp lại!</div>
+        <div class="text-muted" style="font-size: 11px;">Quý khách vui lòng kiểm tra hóa đơn và hàng hóa trước khi rời quầy. Đổi trả trong 07 ngày kèm hóa đơn.</div>
+    </div>
+</div>

@@ -1,0 +1,249 @@
+@model ShiftSession
+@{
+    ViewData["Title"] = $"Chi tiết Ca POS - {Model.ShiftCode}";
+    var totalRev = Model.TotalCashSales + Model.TotalVietQrSales + Model.TotalCardSales;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Biên bản Đối soát Ca làm việc POS</h2>
+        <p class="text-muted small mb-0">Mã phiên: <strong class="font-monospace text-primary">@Model.ShiftCode</strong></p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Danh sách ca
+        </a>
+        <a asp-action="ExportExcel" asp-route-id="@Model.Id" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel đối soát
+        </a>
+        @if (Model.Status == ShiftStatus.Closed)
+        {
+            <form asp-action="Approve" asp-route-id="@Model.Id" method="post" class="d-inline ms-2">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Xác nhận duyệt ca đối soát này?');">
+                    <i class="bi bi-check2-circle me-1"></i> Quản lý phê duyệt ca
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <!-- Thông tin ca -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Thông tin phiên ca</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Trạng thái:</span>
+                        <span>
+                            @if (Model.Status == ShiftStatus.Open)
+                            {
+                                <span class="badge bg-primary">Đang mở (Bán hàng)</span>
+                            }
+                            else if (Model.Status == ShiftStatus.Closed)
+                            {
+                                <span class="badge bg-warning text-dark">Đã đóng (Chờ duyệt)</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Đã phê duyệt</span>
+                            }
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Cửa hàng:</span>
+                        <strong>@Model.Store?.Name</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Quầy POS:</span>
+                        <strong>@Model.Register?.RegisterCode - @Model.Register?.Name</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Thu ngân trực:</span>
+                        <strong>@(Model.Staff?.Name ?? Model.CreatedBy)</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Giờ mở ca:</span>
+                        <span>@Model.OpenedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Giờ đóng ca:</span>
+                        <span>@(Model.ClosedAt.HasValue ? Model.ClosedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") : "Đang hoạt động")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Thông báo Telegram:</span>
+                        <span>
+                            @if (Model.IsReportSentTelegram)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-check me-1"></i>Đã gửi Bot</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Chưa gửi</span>
+                            }
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Email báo cáo:</span>
+                        <span>
+                            @if (Model.IsReportSentEmail)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-check me-1"></i>Đã gửi Quản lý</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Chưa gửi</span>
+                            }
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Đối soát tài chính két tiền -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold"><i class="bi bi-cash-stack text-success me-2"></i>Bảng đối soát tài chính & két tiền</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="p-3 bg-light rounded text-center">
+                            <small class="text-muted d-block">Tiền đầu ca (Két)</small>
+                            <span class="fs-5 fw-bold text-dark">@Model.OpeningCash.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="p-3 bg-light rounded text-center">
+                            <small class="text-muted d-block">Doanh thu tiền mặt</small>
+                            <span class="fs-5 fw-bold text-success">@Model.TotalCashSales.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="p-3 bg-light rounded text-center">
+                            <small class="text-muted d-block">VietQR & Chuyển khoản</small>
+                            <span class="fs-5 fw-bold text-info">@Model.TotalVietQrSales.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="p-3 bg-light rounded text-center">
+                            <small class="text-muted d-block">Quẹt thẻ ngân hàng</small>
+                            <span class="fs-5 fw-bold text-primary">@Model.TotalCardSales.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="table-light w-50">Tổng doanh thu bán lẻ trong ca:</th>
+                                <td class="text-end fw-bold text-success fs-5">@totalRev.ToString("N0") ₫</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">Tổng số đơn hàng hoàn tất:</th>
+                                <td class="text-end fw-bold">@Model.CompletedOrdersCount đơn</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">Tiền mặt dự kiến có trong két:</th>
+                                <td class="text-end fw-bold text-primary fs-5">@Model.ExpectedCash.ToString("N0") ₫</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">Tiền mặt thực kiểm đếm khi đóng ca:</th>
+                                <td class="text-end fw-bold fs-5">
+                                    @(Model.ActualCashCounted.HasValue ? Model.ActualCashCounted.Value.ToString("N0") + " ₫" : "---")
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">Chênh lệch tiền mặt két:</th>
+                                <td class="text-end fw-bold fs-5 @(Model.CashDiscrepancy == 0 ? "text-success" : "text-danger")">
+                                    @Model.CashDiscrepancy.ToString("+0;-#;0") ₫
+                                    @if (Model.CashDiscrepancy == 0)
+                                    {
+                                        <span class="badge bg-success ms-2">Khớp 100%</span>
+                                    }
+                                </td>
+                            </tr>
+                            @if (!string.IsNullOrEmpty(Model.DiscrepancyReason))
+                            {
+                                <tr>
+                                    <th class="table-light">Lý do giải trình chênh lệch:</th>
+                                    <td class="text-danger fw-semibold">@Model.DiscrepancyReason</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách đơn hàng trong ca -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Danh sách đơn hàng hoàn tất trong phiên ca</h5>
+        <span class="badge bg-secondary">@(Model.Orders?.Count ?? 0) giao dịch</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã đơn hàng</th>
+                    <th>Thời gian</th>
+                    <th>Khách hàng</th>
+                    <th class="text-end">Tiền hàng</th>
+                    <th class="text-end">Giảm giá</th>
+                    <th class="text-end">Khách thanh toán</th>
+                    <th>Phương thức</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Orders == null || !Model.Orders.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            Chưa có đơn hàng nào phát sinh trong ca này.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var ord in Model.Orders.OrderByDescending(o => o.CreatedAt))
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge bg-dark font-monospace">@ord.OrderNumber</span>
+                            </td>
+                            <td>@ord.CreatedAt.ToLocalTime().ToString("HH:mm:ss")</td>
+                            <td>@(ord.Customer?.FullName ?? "Khách lẻ tại quầy")</td>
+                            <td class="text-end">@ord.SubTotal.ToString("N0") ₫</td>
+                            <td class="text-end text-danger">@(ord.DiscountAmount > 0 ? "-" + ord.DiscountAmount.ToString("N0") + " ₫" : "0 ₫")</td>
+                            <td class="text-end fw-bold text-success">@ord.TotalAmount.ToString("N0") ₫</td>
+                            <td>
+                                @foreach (var p in ord.Payments)
+                                {
+                                    <span class="badge bg-info-subtle text-info me-1">@p.PaymentMethod: @p.Amount.ToString("N0") ₫</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

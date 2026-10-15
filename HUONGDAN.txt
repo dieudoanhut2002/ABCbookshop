@@ -1,0 +1,398 @@
+================================================================================
+                    HE THONG QUAN LY CHUOI CUA HANG SACH ABCBOOKSHOP
+                 SO TAY HUONG DAN SU DUNG VA VAN HANH CHI TIET
+================================================================================
+Phien ban: 2.0 LTS
+Nen tang: .NET 8 LTS (C# 12) | ASP.NET Core MVC & Web API | EF Core 8 | SQL Server
+Ngay cap nhat: 15/10/2026
+
+--------------------------------------------------------------------------------
+MUC LUC
+--------------------------------------------------------------------------------
+Phan 1: Tong quan he thong & Yeu cau moi truong
+Phan 2: Huong dan chay he thong & Cac dia chi truy cap (URL)
+Phan 3: He thong tai khoan & Phan quyen nguoi dung (RBAC)
+Phan 4: Huong dan Quan ly Danh muc Sach & San pham (Excel Import/Export)
+Phan 5: Huong dan Quan ly Kho hang & So cai kep (Double-Entry Ledger)
+Phan 6: Huong dan Mua hang Nha cung cap & Cong no (Purchasing & GRN)
+Phan 7: Huong dan Dieu chuyen hang hoa Lien cua hang (Inter-Store Transfer)
+Phan 8: Huong dan Ban le tai quay POS (Keyboard Wedge, Tich diem, VietQR)
+Phan 9: Huong dan Mo ca, Dong ca & Xuat bao cao Thu ngan (Shift Reconciliation)
+Phan 10: Huong dan Quan ly Chi phi (OPEX), Bao cao P&L & Tinh Luong nhan vien
+Phan 11: Huong dan Kenh Thuong mai Dien tu E-Commerce & Tra cuu Don hang
+Phan 12: Huong dan Dashboard Lanh dao & Tac vu nen Hangfire
+Phan 13: Huong dan Chay Kiem thu Tu dong (xUnit Test Suite)
+Phan 14: Xu ly su co thuong gap & Luu y van hanh Production
+
+================================================================================
+PHAN 1: TONG QUAN HE THONG & YEU CAU MOI TRUONG
+================================================================================
+He thong ABCBookShop la phan mem quan tri ban le chuoi nha sach chuyen nghiep theo
+kien truc Modular Monolith. He thong ket noi dong bo giua kenh ban le tai quay (POS),
+kenh thuong mai dien tu truc tuyen (Web Storefront), kho trung tam (Central Warehouse),
+kho quay tung chi nhanh, tai chinh ke toan va bao cao tu dong qua Hangfire, Email, Telegram.
+
+YEU CAU MOI TRUONG:
+1. He dieu hanh: Windows 10/11 hoac Windows Server 2019/2022.
+2. .NET SDK: Phien ban .NET 8.0 SDK tro len.
+3. Co so du lieu: Microsoft SQL Server 2019/2022 hoac SQL Server LocalDB (mssqllocaldb).
+4. Cong cu: Visual Studio 2022 (v17.8+), VS Code hoac Rider.
+
+================================================================================
+PHAN 2: HUONG DAN CHAY HE THONG & CAC DIA CHI TRUY CAP (URL)
+================================================================================
+1. Khoi chay ung dung qua Command Line (Terminal / PowerShell):
+   - Mo terminal tai thu muc chua ma nguon:
+     cd C:\Git\ABCBookShop\ABCbookshop\ABCBookShop
+   - Chay lenh:
+     dotnet run
+   - He thong se tu dong khoi tao database SQL Server LocalDB neu chua co,
+     tu dong chay Migration nang cap he thong va Seed du lieu mau ban dau.
+
+2. Cac duong dan truy cap chinh:
+   - Kenh mua hang E-Commerce danh cho khach hang:
+     https://localhost:5001/ hoac http://localhost:5000/
+   - Danh sach san pham & Tra cuu ton kho theo chi nhanh:
+     https://localhost:5001/Home/Books
+   - Gio hang & Dat hang online:
+     https://localhost:5001/Cart
+   - Tra cuu hanh trinh don hang:
+     https://localhost:5001/Home/OrderTracking
+   - Man hinh Ban le tai quay POS (Danh cho thu ngan):
+     https://localhost:5001/POS/Terminal
+   - Quan ly Ca lam viec Thu ngan:
+     https://localhost:5001/POS/Shift
+   - Dashboard Tong quan Chuoi danh cho Ban lanh dao:
+     https://localhost:5001/Admin/Dashboard
+   - Quan ly Danh muc San pham & Sach:
+     https://localhost:5001/Admin/Product
+   - Quan ly Kho & So cai ton kho:
+     https://localhost:5001/Admin/Inventory
+   - Quan ly Nhap hang Nha cung cap & Cong no:
+     https://localhost:5001/Admin/Purchasing
+   - Bao cao Tai chinh Lai/Lo (P&L) & Tinh Luong:
+     https://localhost:5001/Admin/Finance/ProfitLoss
+   - Bang dieu khien Tac vu nen tu dong Hangfire:
+     https://localhost:5001/hangfire
+
+================================================================================
+PHAN 3: HE THONG TAI KHOAN & PHAN QUYEN NGUOI DUNG (RBAC)
+================================================================================
+He thong thuc hien kiem soat truy cap nghiem ngat dua tren Cookie Authentication
+va Authorization Policies. Du lieu mau seed san cac vai tro mau:
+
+1. SysChainOwner (Chu chuoi / Tong giam doc):
+   - Quyen han cao nhat, xem toan bo bao cao doanh thu, P&L, dieu chuyen va kho tong.
+   - Tai khoan mau: admin@abcbookshop.vn / Mat khau: Abc@123456
+
+2. ChainManager (Quan ly van hanh chuoi):
+   - Quan ly cac cua hang, theo doi ton kho toan chuoi, duyet phieu dieu chuyen.
+
+3. StoreManager (Cua hang truong):
+   - Quan ly nhan su, duyet bien ban dong ca cua thu ngan, lap phieu chi phi OPEX,
+     xac nhan nhap kho dieu chuyen ve chi nhanh cua minh.
+   - Tai khoan mau: manager.q1@abcbookshop.vn / Mat khau: Abc@123456
+
+4. Cashier (Thu ngan):
+   - Quyen truy cap khu vuc POS (/POS/Terminal, /POS/Shift).
+   - Thuc hien mo ca, ban hang, in hoa don, kiem tien dong ca.
+   - Tai khoan mau: cashier.q1@abcbookshop.vn / Mat khau: Abc@123456
+
+5. InventoryManager (Thu kho):
+   - Quyen lap phieu nhap kho GRN tu nha cung cap, phieu kiem ke ton kho.
+
+================================================================================
+PHAN 4: HUONG DAN QUAN LY DANH MUC SACH & SAN PHAM (CATALOG & EXCEL)
+================================================================================
+Truy cap: /Admin/Product
+
+1. Tao moi san pham / sach:
+   - Nhan nut "Them San Pham Moi".
+   - Nhap Ma SKU (duy nhat toan he thong, vi du: BK-VH-001).
+   - Barcode: Co the nhap tay barcode co san tren sach hoac tick chon
+     "Tu dong sinh Barcode" (He thong sinh chuan EAN-13: ABCyyMMxxxxxx).
+   - Thong tin an pham sach: Nhap ISBN, Tac gia, Nha xuat ban, Nam XB, So trang,
+     Ngon ngu, Hinh thuc bia (Bia mem, Bia cung...).
+   - Nhap Gia von (Cost Price) va Gia ban (Selling Price).
+   - Nhap Nguong canh bao ton kho toi thieu (Low Stock Threshold).
+   - Nhan "Luu San Pham".
+
+2. Xuat du lieu ra Excel:
+   - Nhan nut "Xuat Excel" (/Admin/Product/ExportExcel).
+   - File Excel (.xlsx) tao boi ClosedXML se tu dong tai ve, chua day du danh sach
+     san pham, gia von, gia ban, ton kho hien tai va chi tiet xuat ban.
+
+3. Nhap du lieu hang loat tu file Excel (Import):
+   - Nhan nut "Tai file Excel mau" de lay form chuan 14 cot.
+   - Dien thong tin sach vao file theo dinh dang mau.
+   - Chon file va nhan "Tien hanh Nhap Excel".
+   - He thong tu dong kiem tra hop le tung dong. Neu co dong bi loi (thieu SKU,
+     gia am, sai dinh dang), he thong se thong bao ro so dong thanh cong va
+     cho phep tai ve file "Bao cao loi chi tiet" co chu thich nguyen nhan loi.
+
+================================================================================
+PHAN 5: HUONG DAN QUAN LY KHO HANG & SO CAI KEP (DOUBLE-ENTRY LEDGER)
+================================================================================
+Truy cap: /Admin/Inventory
+
+1. Xem ton kho thoi gian thuc (Stock Balances):
+   - Xem so luong ton kho cua tung san pham tai tung kho chi tiet.
+   - Canh bao mau do/vang doi voi cac mat hang co so luong ton <= nguong toi thieu.
+
+2. Tra cuu So cai Giao dich Ton kho (Audit Trail):
+   - Xem lich su chi tiet tai muc "Nhat ky Giao dich".
+   - Moi dong ghi nhan ro: Thoi gian, Loai bien dong (Ban tai quay, Ban online,
+     Nhap NCC, Chuyen kho, Kiem ke), Ma chung tu, So luong thay doi (+/-),
+     So du ton kho truoc khi giao dich, So du ton kho sau khi giao dich va Nguoi thao tac.
+
+3. Kiem ke & Dieu chinh ton kho (Stock Adjustment):
+   - Nhan nut "Tao Phieu Dieu Chinh".
+   - Chon Kho, San pham can kiem ke.
+   - Nhap so luong ton thuc te kiem dem duoc va Ly do dieu chinh.
+   - He thong tu dong tinh so luong chenh lech thua/thieu va ghi nhan bu tru
+     vao so cai kep ma khong cho phep sua truc tiep so ton kho.
+
+================================================================================
+PHAN 6: HUONG DAN MUA HANG NHA CUNG CAP & CONG NO (PURCHASING & GRN)
+================================================================================
+Truy cap: /Admin/Purchasing
+
+1. Danh ba Nha cung cap:
+   - Quan ly thong tin cac Nha xuat ban, Nha phan phoi (Kim Dong, Nha Nam, Fahasa...).
+   - Theo doi Tong cong no hien tai dang phai tra cho tung nha cung cap.
+
+2. Tao Phieu Nhap Kho (Goods Receipt Note - GRN):
+   - Nhan nut "Lap Phieu Nhap Kho".
+   - Chon Nha cung cap, Chon Kho nhan hang (vi du: Kho Tong Central).
+   - Nhap danh sach cac dau sach, So luong nhap thuc te va Don gia nhap von.
+   - Nhap So tien da thanh toan ngay cho NCC (neu tra truoc hoac tra tien mat).
+   - So tien con lai chua thanh toan se tu dong duoc ghi nhan vao So cong no
+     phai tra nha cung cap (ProviderDebtLedger).
+   - Tuyen hang nhap se lap tuc tang so luong ton kho va ghi nhan giao dich so cai.
+
+================================================================================
+PHAN 7: HUONG DAN DIEU CHUYEN HANG HOA LIEN CUA HANG (INTER-STORE TRANSFER)
+================================================================================
+Truy cap: /Admin/Inventory -> Tab "Dieu chuyen kho"
+
+Quy trinh 3 buoc dam bao khong that thoat hang hoa:
+- Buoc 1: Lap phieu dieu chuyen (Trang thai: Draft)
+  Chon Kho xuat (vi du: Kho Tong Central) va Kho nhan (vi du: Kho Quay Q1).
+  Them cac san pham va so luong can chuyen.
+- Buoc 2: Xuat kho van chuyen (Trang thai: InTransit)
+  Nguoi quan ly nhan "Xac nhan Xuat kho".
+  So luong ton tai Kho xuat se lap tuc bi tru qua so cai kep.
+  Hang hoa duoc xep vao trang thai "Dang di duong" (In-Transit).
+- Buoc 3: Nhan hang & Nhap kho dich (Trang thai: Received)
+  Cua hang nhan kiem dem hang thuc te va nhan "Xac nhan Nhap kho".
+  So luong ton tai Kho nhan duoc cong tang tren so cai kep.
+  Phieu chuyen kho hoan tat 100%.
+
+================================================================================
+PHAN 8: HUONG DAN BAN LE TAI QUAY POS (KEYBOARD WEDGE, TICH DIEM, VIETQR)
+================================================================================
+Truy cap: /POS/Terminal
+(Luu y: Thu ngan phai co Ca lam viec dang Mo moi duoc phep ban hang)
+
+1. Thao tac ban hang nhanh:
+   - Quet ma vach: Su dung may quet ma vach USB (hoat dong che do gia lap ban phim).
+     Dua dau doc vao barcode tren bia sach, may quet tu dong tim san pham va
+     them ngay vao don hang voi so luong mac dinh la 1.
+   - Tim kiem thu cong: Go ten sach, ma SKU hoac barcode vao o tim kiem.
+   - Chinh sua gio hang: Thay doi so luong, xoa dong san pham nhanh bang 1 click.
+
+2. Khach hang & Tich diem thanh vien:
+   - Nhap so dien thoai khach hang vao o "Tim khach hang" va an Enter.
+   - Neu khach cu: Hien thi ten, hang thanh vien (Standard, VIP) va so diem hien co.
+   - Neu khach moi: An nut "Them nhanh" de tao ho so khach hang trong 5 giay.
+   - Tich diem: Moi 10.000d mua hang tu dong tich 1 diem thuong vao tai khoan.
+   - Tieu diem: Nhap so diem muon su dung de giam gia (1 diem = 1.000d khau tru).
+
+3. Thanh toan da phuong thuc (Split Payment):
+   - Tien mat (Cash): Nhap so tien khach dua, he thong tu dong tinh tien thua tra khach.
+   - Chuyen khoan VietQR: Chon phuong thuc VietQR, he thong tu dong hien thi Ma QR
+     dong kem logo Ngan hang, so tai khoan va chinh xac so tien can thanh toan kem
+     noi dung chuyen khoan duy nhat theo Ma don hang.
+   - The tin dung/ATM (Card): Nhap ma chuan chi pos the vao he thong.
+   - Thanh toan ket hop: Cho phep khach tra mot phan tien mat va phan con lai chuyen khoan.
+
+4. Hoan tat don & In hoa don:
+   - Nhan "Hoan tat Thanh toan". He thong tu dong tru ton kho quat qua so cai kep,
+     cong diem thuong cho khach va tang doanh thu tien mat trong ca cua thu ngan.
+   - Hoa don ban le kho giay 80mm chuan POS tu dong hien thi san sang de in.
+
+================================================================================
+PHAN 9: HUONG DAN MO CA, DONG CA & XUAT BAO CAO THU NGAN (SHIFT RECONCILIATION)
+================================================================================
+Truy cap: /POS/Shift
+
+1. Mo ca dau ngay (Opening Shift):
+   - Thu ngan chon Quay thu ngan (POS Register).
+   - Nhap so tien mat dau ca duoc ban giao lam quy tien le (Opening Cash Float,
+     vi du: 1.000.000d).
+   - Nhan "Xac nhan Mo ca".
+
+2. Theo doi trong ca:
+   - Trong suot thoi gian ca mo, he thong tu dong ghi nhan va phan loai:
+     + Tong doanh thu ban hang trong ca.
+     + Doanh thu Tien mat.
+     + Doanh thu Chuyen khoan VietQR.
+     + Doanh thu The ngan hang.
+     + So tien mat ly thuyet phai co trong ket = Tien dau ca + Doanh thu tien mat.
+
+3. Dong ca cuoi ngay & Kiem dem chenh lech (Closing Shift):
+   - Thu ngan dem toan bo tien mat thuc te co trong ket va nhap vao o "Tien mat thuc te".
+   - He thong tu dong tinh Chenh lech = Tien mat thuc te - Tien mat ly thuyet.
+   - CHINH SACH KIEM SOAT GIAN LAN:
+     Neu chenh lech (thua hoac thieu) vuot qua nguong cho phep la 50.000d, he thong
+     BAT BUOC thu ngan phai nhap "Ly do / Giai trinh chenh lech" truoc khi cho phep dong ca.
+
+4. Báo cáo & Thong bao tu dong:
+   - Xuat file Excel bien ban dong ca ClosedXML (/POS/Shift/ExportExcel/id).
+   - Gui Email thong bao tu dong kem so lieu chenh lech toi hop thu Ke toan / Quan ly.
+   - Gui tin nhan thong bao canh bao tuc thi toi nhom Quan ly tren Telegram.
+
+================================================================================
+PHAN 10: HUONG DAN QUAN LY CHI PHI (OPEX), BAO CAO P&L & TINH LUONG NHAN VIEN
+================================================================================
+Truy cap: /Admin/Finance
+
+1. Quan ly Chi phi van hanh (OPEX):
+   - Truy cap /Admin/Finance.
+   - Nhan "Lap Phieu Chi".
+   - Chon Cua hang, Danh muc chi phi (Thue mat bang, Tien dien nuoc, Internet,
+     Vat tu dong goi, Marketing...).
+   - Nhap So tien chi, Nguoi nhan tien va Dien giai chung tu.
+   - Chi phi sau khi lap se duoc tinh ngay vao bao cao tai chinh cua chi nhanh.
+
+2. Bao cao Ket qua Kinh doanh Lai/Lo (Profit & Loss - P&L):
+   - Truy cap /Admin/Finance/ProfitLoss.
+   - Chon Thang/Nam va Cua hang can xem (hoac chon "Toan bo chuoi").
+   - He thong tinh toan chinh xac theo nguyen ly ke toan:
+     (1) Doanh thu thuan ban hang (Net Revenue).
+     (2) Gia von hang ban (Cost of Goods Sold - COGS) lay tu so cai tai thoi diem ban.
+     (3) Loi nhuan gop (Gross Profit) = Doanh thu - Gia von. Ty suat Loi nhuan gop (%).
+     (4) Chi phi van hanh (OPEX) chi tiet theo tung hang muc.
+     (5) Loi nhuan hoat dong (Operating Profit) = Loi nhuan gop - Chi phi OPEX.
+   - Cho phep xuat toan bo bang P&L ra file Excel ClosedXML chuan bao cao quan tri.
+
+3. Tinh Luong nhan vien & Hoa hong ban le:
+   - Truy cap /Admin/Finance/Payroll.
+   - Chon Cua hang va Ky luong thang.
+   - Cong thuc tinh luong:
+     Luong thuc lanh = (Luong co ban / 26 * Ngay cong thuc te)
+                       + Hoa hong ban hang (1% tren tong doanh so POS cua nhan vien)
+                       + Phu cap an trua, xang xe
+                       - Khau tru bao hiem & phat.
+
+================================================================================
+PHAN 11: HUONG DAN KENH THUONG MAI DIEN TU E-COMMERCE & TRA CUU DON HANG
+================================================================================
+1. Trang chu mua sam (/Home):
+   - Giao dien toi uu cho Ca May tinh (Desktop) va Dien thoai (Mobile Responsive).
+   - Banner noi bat cac chuong trinh khuyen mai.
+   - Danh muc Sách ban chay nhat toan quoc (Best-Sellers) & Sach moi xuat ban.
+
+2. Chi tiet Sach & Tra cuu ton kho chuoi (/Home/Details/{id}):
+   - Hien thi anh bia, gia ban, gia bia tiet kiem, tac gia, nha xuat ban, ISBN.
+   - Tinh nang dac biet: "Ton kho tai cac Cua hang" cho phep ban doc biet chinh xac
+     tua sach nay hien dang co mat tai chi nhanh nao de den mua truc tiep neu can.
+
+3. Gio hang & Dat hang online (/Cart):
+   - Them san pham vao gio hang, cap nhat so luong linh hoat.
+   - Chinh sach Van chuyen: Don hang co tong gia tri tu 250.000d tro len duoc
+     he thong tu dong MIEN PHI VAN CHUYEN toan quoc (Shipping fee = 0d).
+   - Thong tin nguoi nhan: Ho ten, So dien thoai, Dia chi giao hang chi tiet.
+   - Phuong thuc thanh toan:
+     + Chuyen khoan VietQR: Tu dong tao don kem ma QR chuyen khoan.
+     + Thanh toan khi nhan hang (COD): Don hang duoc xac nhan ngay lap tuc.
+   - Khi don hang online duoc tao, he thong tu dong tru ton kho tai Kho Tong Central
+     qua so cai kep de chong ban vuot qua so ton kho.
+
+4. Tra cuu hanh trinh don hang (/Home/OrderTracking):
+   - Khach hang chi can nhap Ma don hang (vi du: WEB-20261015-12345) va So dien thoai
+     de tra cuu trang thai: Cho thanh toan, Da xac nhan, Dang van chuyen, Hoan tat.
+
+================================================================================
+PHAN 12: HUONG DAN DASHBOARD LANH DAO & TAC VU NEN HANGFIRE
+================================================================================
+1. Executive Chain Dashboard (/Admin/Dashboard):
+   - Doanh thu Hom nay & So luong don hang hom nay.
+   - Doanh thu Luy ke Thang & Tong so luong don hang thang.
+   - Canh bao mat hang sap het kho (ton <= nguong toi thieu).
+   - Tong gia tri ton kho toan chuoi tinh theo gia von (Total Inventory Value).
+   - Bieu do Ty trong doanh thu va so luong don cua tung Cua hang trong chuoi.
+   - Top 10 tua sach ban chay nhat thang kem so luong da ban va doanh thu.
+   - Danh sach 10 don hang phat sinh gan nhat thoi gian thuc.
+
+2. Quan tri Tac vu nen Hangfire (/hangfire):
+   - Dang ky san Recurring Job: "pos-check-unclosed-shifts" chay moi 30 phut.
+   - Tu dong phat hien cac ca lam viec mo qua 14 tieng ma thu ngan quen chua dong,
+     tu dong kich hoat gui canh bao den Ban quan ly de tranh gian lan thieu hut tien.
+
+================================================================================
+PHAN 13: HUONG DAN CHAY KIEM THU TU DONG (XUNIT TEST SUITE)
+================================================================================
+He thong di kem bo kiem thu tu dong hoan chinh 25 tests, bao phu toan bo logic:
+- Chay toan bo test suite qua Command Line:
+  dotnet test ABCBook.Tests
+
+Ket qua kiem thu toan bo 25/25 tests deu PASS:
+1. CatalogTests:
+   - AutoGenerateBarcode_ShouldFollowCorrectFormatAndBeUnique [PASS]
+   - CreateProduct_WithDuplicateSku_ShouldThrowInvalidOperationException [PASS]
+   - ProductExcelService_ImportExcel_ShouldDetectMissingSkuAndDuplicate [PASS]
+2. InventoryConcurrencyTests:
+   - DeductStock_WithSufficientQuantity_ShouldDecreaseStockAndWriteDoubleEntryLedger [PASS]
+   - DeductStock_WhenInsufficientQuantity_ShouldThrowInsufficientStockException [PASS]
+   - ConcurrentDeduction_WhenOnlyOneItemLeft_ShouldAllowOnlyOneAndPreventNegativeStock [PASS]
+   - TransferWorkflow_Draft_To_InTransit_To_Received_ShouldBalanceAcrossWarehouses [PASS]
+   - GoodsReceiptNote_ShouldIncreaseStock_AndAccrueProviderDebt [PASS]
+3. PosShiftTests:
+   - OpenShift_ShouldSetExpectedCashToOpeningCash_AndMarkOpen [PASS]
+   - OpenShift_WhenRegisterAlreadyHasOpenShift_ShouldThrowInvalidOperationException [PASS]
+   - ProcessCheckout_ShouldDeductStock_IncreaseShiftSales_AndEarnCustomerPoints [PASS]
+   - ProcessCheckout_WithIdempotencyKey_ShouldPreventDuplicateOrder [PASS]
+   - CloseShift_WhenValid_ShouldMarkClosed_AndCalculateDiscrepancy [PASS]
+   - CloseShift_WhenDiscrepancyExceeds50kWithoutReason_ShouldThrowInvalidOperationException [PASS]
+   - GenerateShiftExcelReport_ShouldReturnValidXlsxBytes [PASS]
+4. FinanceTests:
+   - CreateExpenseVoucher_ShouldRecordOpexAndAssociateCategory [PASS]
+   - GetStoreProfitLoss_ShouldCalculateGrossProfit_Opex_AndOperatingMarginAccurately [PASS]
+   - GenerateProfitLossExcelReport_ShouldGenerateValidSpreadsheet [PASS]
+   - CalculateMonthlyPayroll_ShouldIncludeBaseSalaryAndSalesCommissions [PASS]
+5. StorefrontTests:
+   - ShoppingCart_Calculations_ShouldProperlyComputeSubTotalShippingAndTotal [PASS]
+   - PlaceOnlineOrder_WithCod_ShouldCreateOrderDeductCentralStockAndAccrueLoyaltyPoints [PASS]
+   - PlaceOnlineOrder_WithVietQR_ShouldSetPendingPaymentAndReference [PASS]
+   - PlaceOnlineOrder_InsufficientStock_ShouldThrowInvalidOperationException [PASS]
+   - TrackOrder_WithValidAndInvalidPhone_ShouldReturnExpectedResult [PASS]
+   - GetChainDashboardSummary_ShouldAccuratelyCalculateMetricsAcrossStores [PASS]
+
+================================================================================
+PHAN 14: XU LY SU CO THUONG GAP & LUU Y VAN HANH PRODUCTION
+================================================================================
+1. Su co loi chuoi ket noi SQL Server:
+   - Kiem tra lai chuoi ket noi "ABCBookDb" trong file appsettings.json.
+   - Dam bao SQL Server hoac LocalDB dang chay. Co the kiem tra bang lenh:
+     sqllocaldb info mssqllocaldb
+
+2. Su co may quet ma vach khong nhan:
+   - Kiem tra che do cua may quet ma vach (phai o che do USB HID / Keyboard Wedge).
+   - May quet phai duoc cau hinh tu dong them ky tu "Enter" (Suffix Carriage Return)
+     sau moi lan quet ma de he thong tu dong kich hoat them vao gio hang.
+
+3. Thay doi cau hinh Thong bao Email / Telegram cho moi truong Production:
+   - Mo appsettings.json hoac su dung User Secrets / Environment Variables:
+     "Notification:Telegram:BotToken": "dien_token_that",
+     "Notification:Telegram:ChatId": "dien_chat_id_that",
+     "Notification:Email:SenderEmail": "email_gui@congty.com",
+     "Notification:Email:SenderPassword": "mat_khau_ung_dung"
+
+4. Sao luu & Phuc hoi Co so du lieu:
+   - Thiet lap lich Backup hang ngay cho database ABCBookShopDb tren SQL Server Agent.
+   - File log duoc ghi tu dong vao thu muc "logs/abcbookshop-yyyyMMdd.txt" bang Serilog
+     va luu giu toi da 14 ngay gan nhat.
+================================================================================
+                       CHUC HE THONG VAN HANH THANH CONG!
+================================================================================

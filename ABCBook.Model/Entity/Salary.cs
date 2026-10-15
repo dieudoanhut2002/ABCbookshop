@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ABCBook.Model.Entity
@@ -12,6 +12,7 @@ namespace ABCBook.Model.Entity
         [Key]
         public Guid Id { get; set; }
         public Guid StaffID { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
         public decimal MonthlySalary { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }

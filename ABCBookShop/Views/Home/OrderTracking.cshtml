@@ -1,0 +1,108 @@
+@{
+    ViewData["Title"] = "Tra cứu đơn hàng trực tuyến";
+    var order = ViewBag.Order as Order;
+    var searched = ViewBag.Searched as bool? ?? false;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm mt-3 mb-4">
+            <div class="card-header bg-primary text-white py-3 text-center">
+                <i class="bi bi-truck fs-1 mb-2 d-block"></i>
+                <h4 class="card-title mb-0 fw-bold">TRA CỨU ĐƠN HÀNG TRỰC TUYẾN</h4>
+                <small class="opacity-75">Kiểm tra trạng thái vận chuyển và thông tin đơn hàng ABCBookShop</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="get" asp-action="OrderTracking">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mã đơn hàng (Order Number) <span class="text-danger">*</span></label>
+                        <input type="text" name="orderNumber" value="@ViewBag.OrderNumber" class="form-control" placeholder="VD: WEB-20261015-89472" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Số điện thoại đặt hàng <span class="text-danger">*</span></label>
+                        <input type="text" name="phone" value="@ViewBag.Phone" class="form-control" placeholder="VD: 0901234567" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                        <i class="bi bi-search me-1"></i> Tra cứu trạng thái đơn
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        @if (searched)
+        {
+            if (order == null)
+            {
+                <div class="alert alert-warning text-center shadow-sm">
+                    <i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2"></i>
+                    Không tìm thấy đơn hàng với thông tin đã cung cấp. Vui lòng kiểm tra lại Mã đơn và Số điện thoại.
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold font-monospace text-primary fs-5">@order.OrderNumber</span>
+                        @if (order.Status == OrderStatus.Completed)
+                        {
+                            <span class="badge bg-success">Đã hoàn tất / Đang giao</span>
+                        }
+                        else if (order.Status == OrderStatus.PendingPayment)
+                        {
+                            <span class="badge bg-warning text-dark">Chờ thanh toán VietQR</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@order.Status</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Ngày đặt hàng:</span>
+                                <strong>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Người nhận:</span>
+                                <strong>@order.Customer?.FullName</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Số điện thoại:</span>
+                                <strong>@order.Customer?.PhoneNumber</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Địa chỉ giao nhận:</span>
+                                <span class="text-end">@order.Note</span>
+                            </li>
+                        </ul>
+
+                        <h6 class="fw-bold mb-2">Sản phẩm đã đặt:</h6>
+                        <table class="table table-sm table-bordered mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sách / Sản phẩm</th>
+                                    <th class="text-center">SL</th>
+                                    <th class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in order.Items)
+                                {
+                                    <tr>
+                                        <td>@item.ProductName</td>
+                                        <td class="text-center">@item.Quantity.ToString("N0")</td>
+                                        <td class="text-end">@item.LineTotal.ToString("N0") ₫</td>
+                                    </tr>
+                                }
+                                <tr class="table-light fw-bold">
+                                    <td colspan="2" class="text-end">TỔNG CỘNG:</td>
+                                    <td class="text-end text-danger">@order.TotalAmount.ToString("N0") ₫</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

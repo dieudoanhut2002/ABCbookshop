@@ -1,0 +1,186 @@
+@model List<ProviderDto>
+@{
+    ViewData["Title"] = "Quản lý Nhà cung cấp & Theo dõi Công nợ";
+    var totalDebt = Model?.Sum(p => p.OutstandingDebt) ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Quản lý Nhà cung cấp & Theo dõi Công nợ</h2>
+        <p class="text-muted small mb-0">Danh bạ nhà cung ứng sách, văn phòng phẩm, quà tặng và quản lý công nợ mua hàng (AP).</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Danh sách Phiếu nhập (GRN)
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewSupplier">
+            <i class="bi bi-person-plus me-1"></i> Thêm Nhà cung cấp mới
+        </button>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Card -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm border-start border-4 border-danger">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">Tổng công nợ phải trả NCC (AP)</div>
+                <div class="fs-4 fw-bold text-danger">@totalDebt.ToString("N0") ₫</div>
+                <div class="text-muted small">Từ @(Model?.Count(p => p.OutstandingDebt > 0) ?? 0) nhà cung cấp còn nợ</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">Tổng số đối tác cung ứng</div>
+                <div class="fs-4 fw-bold text-primary">@(Model?.Count ?? 0) đối tác</div>
+                <div class="text-muted small">Nhà xuất bản & Doanh nghiệp phân phối</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Supplier List -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã NCC</th>
+                    <th>Tên Nhà cung cấp</th>
+                    <th>Người liên hệ</th>
+                    <th>Điện thoại / Email</th>
+                    <th>Mã số thuế</th>
+                    <th>Địa chỉ</th>
+                    <th class="text-end">Công nợ hiện tại (VNĐ)</th>
+                    <th class="text-center">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            Chưa có nhà cung cấp nào. Nhấn "Thêm Nhà cung cấp mới" để bắt đầu.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td><span class="badge bg-dark font-monospace">@p.Code</span></td>
+                            <td class="fw-bold">@p.Name</td>
+                            <td>@(string.IsNullOrEmpty(p.ContactPerson) ? "---" : p.ContactPerson)</td>
+                            <td>
+                                <div><i class="bi bi-telephone text-muted me-1"></i>@(string.IsNullOrEmpty(p.Phone) ? "---" : p.Phone)</div>
+                                @if (!string.IsNullOrEmpty(p.Email))
+                                {
+                                    <small class="text-muted"><i class="bi bi-envelope me-1"></i>@p.Email</small>
+                                }
+                            </td>
+                            <td><code>@(string.IsNullOrEmpty(p.TaxCode) ? "---" : p.TaxCode)</code></td>
+                            <td><small class="text-muted">@(string.IsNullOrEmpty(p.Address) ? "---" : p.Address)</small></td>
+                            <td class="text-end">
+                                @if (p.OutstandingDebt > 0)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger fs-6 fw-bold">
+                                        @p.OutstandingDebt.ToString("N0") ₫
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-success fw-semibold">0 ₫</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (p.IsActive)
+                                {
+                                    <span class="badge bg-success">Đang hợp tác</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Tạm ngưng</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm Nhà cung cấp -->
+<div class="modal fade" id="modalNewSupplier" tabindex="-1" aria-labelledby="modalSupplierTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="CreateSupplier" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalSupplierTitle">
+                        <i class="bi bi-building-add text-primary me-2"></i>Thêm Nhà cung cấp mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mã Nhà cung cấp <span class="text-danger">*</span></label>
+                        <input type="text" name="Code" class="form-control" placeholder="VD: NXB-TRE, NXB-KDK" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên Nhà cung cấp <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control" placeholder="VD: NXB Trẻ, Fahasa, Biti's..." required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Người liên hệ</label>
+                            <input type="text" name="ContactPerson" class="form-control" placeholder="Tên đại diện" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại</label>
+                            <input type="text" name="Phone" class="form-control" placeholder="090..." />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="Email" class="form-control" placeholder="contact@nxb.vn" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mã số thuế</label>
+                            <input type="text" name="TaxCode" class="form-control" placeholder="030..." />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Địa chỉ trụ sở / Kho giao</label>
+                        <input type="text" name="Address" class="form-control" placeholder="Số nhà, đường, quận/huyện..." />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu Nhà cung cấp
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

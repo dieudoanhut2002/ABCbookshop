@@ -1,0 +1,209 @@
+@model PagedResult<StockBalanceDto>
+@{
+    ViewData["Title"] = "Quản lý Tồn Kho & Kho Chi Nhánh";
+    var warehouses = ViewBag.Warehouses as List<WarehouseDto> ?? new List<WarehouseDto>();
+    Guid? currentWarehouseId = ViewBag.CurrentWarehouseId;
+    string? currentKeyword = ViewBag.CurrentKeyword;
+    bool? currentOnlyLowStock = ViewBag.CurrentOnlyLowStock;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header & Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="text-primary mb-0"><i class="bi bi-box-seam me-2"></i>Bảng Tồn Kho Chi Nhánh & Kho Tổng</h3>
+            <small class="text-muted">Theo dõi số lượng tồn kho khả dụng thời gian thực, cảnh báo sắp hết hàng và điều chuyển</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Transfers" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left-right me-1"></i>Đơn chuyển kho liên chi nhánh
+            </a>
+            <a asp-action="Adjust" class="btn btn-outline-danger">
+                <i class="bi bi-sliders me-1"></i>Kiểm kê & Xuất hủy hàng
+            </a>
+            <a asp-action="Ledger" class="btn btn-secondary">
+                <i class="bi bi-journal-text me-1"></i>Sổ cái kiểm toán kho
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body bg-light rounded">
+            <form method="get" asp-action="Index" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <select name="warehouseId" class="form-select">
+                        <option value="">-- Tất cả các kho toàn chuỗi --</option>
+                        @foreach (var wh in warehouses)
+                        {
+                            <option value="@wh.Id" selected="@(currentWarehouseId == wh.Id)">
+                                @wh.Name (@wh.StoreName) @(wh.IsCentralWarehouse ? "[Kho Tổng]" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="keyword" value="@currentKeyword" class="form-control" placeholder="Tên sản phẩm, SKU, Barcode, Tên kho..." />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch pt-2">
+                        <input class="form-check-input" type="checkbox" name="onlyLowStock" value="true" id="chkLowStock" @(currentOnlyLowStock == true ? "checked" : "") />
+                        <label class="form-check-label text-danger fw-bold" for="chkLowStock">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Hàng tồn thấp
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex gap-2 justify-content-end">
+                    <button type="submit" class="btn btn-primary px-3"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">Kho lưu trữ</th>
+                            <th>Chi nhánh</th>
+                            <th>Mã SKU / Barcode</th>
+                            <th>Tên sản phẩm</th>
+                            <th class="text-end">Giá vốn</th>
+                            <th class="text-end">Giá niêm yết</th>
+                            <th class="text-center">Tồn thực tế</th>
+                            <th class="text-center">Tồn giữ hàng</th>
+                            <th class="text-center">Tồn khả dụng</th>
+                            <th class="text-center">Ngưỡng cảnh báo</th>
+                            <th class="text-center pe-3">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items == null || !Model.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Không có dữ liệu tồn kho nào thỏa mãn điều kiện.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold text-dark">
+                                        <i class="bi bi-building me-1 text-secondary"></i>@item.WarehouseName
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">@item.StoreName</span></td>
+                                    <td>
+                                        <div class="fw-bold font-monospace">@item.ProductSKU</div>
+                                        <small class="text-muted font-monospace">@item.ProductBarcode</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark">@item.ProductTitle</span>
+                                    </td>
+                                    <td class="text-end font-monospace text-muted">@item.CostPrice.ToString("N0") đ</td>
+                                    <td class="text-end font-monospace fw-bold text-success">@item.SellingPrice.ToString("N0") đ</td>
+                                    <td class="text-center font-monospace fs-6">
+                                        <strong>@item.Quantity.ToString("N0")</strong> <small class="text-muted">@item.Unit</small>
+                                    </td>
+                                    <td class="text-center font-monospace text-muted">
+                                        @item.ReservedQuantity.ToString("N0")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsLowStock)
+                                        {
+                                            <span class="badge bg-danger p-2" title="Cảnh báo: Dưới ngưỡng tối thiểu (@item.LowStockThreshold)">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>@item.AvailableQuantity.ToString("N0") @item.Unit
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success p-2 font-monospace fs-6">
+                                                @item.AvailableQuantity.ToString("N0") @item.Unit
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center font-monospace text-muted">
+                                        @item.LowStockThreshold.ToString("N0") @item.Unit
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Ledger" asp-route-warehouseId="@item.WarehouseId" asp-route-productId="@item.ProductId" class="btn btn-outline-secondary" title="Xem lịch sử sổ cái">
+                                                <i class="bi bi-clock-history"></i>
+                                            </a>
+                                            <a asp-action="Adjust" asp-route-warehouseId="@item.WarehouseId" asp-route-productId="@item.ProductId" class="btn btn-outline-danger" title="Điều chỉnh / Xuất hủy">
+                                                <i class="bi bi-sliders"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted">
+                    Hiển thị <strong>@((Model.PageIndex - 1) * Model.PageSize + 1)</strong> đến <strong>@(Math.Min(Model.PageIndex * Model.PageSize, Model.TotalCount))</strong> trong <strong>@Model.TotalCount</strong> bản ghi tồn kho
+                </small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-pageIndex="@(Model.PageIndex - 1)"
+                               asp-route-warehouseId="@currentWarehouseId"
+                               asp-route-keyword="@currentKeyword"
+                               asp-route-onlyLowStock="@currentOnlyLowStock">Trước</a>
+                        </li>
+                        @for (int p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.PageIndex ? "active" : "")">
+                                <a class="page-link" asp-action="Index"
+                                   asp-route-pageIndex="@p"
+                                   asp-route-warehouseId="@currentWarehouseId"
+                                   asp-route-keyword="@currentKeyword"
+                                   asp-route-onlyLowStock="@currentOnlyLowStock">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-pageIndex="@(Model.PageIndex + 1)"
+                               asp-route-warehouseId="@currentWarehouseId"
+                               asp-route-keyword="@currentKeyword"
+                               asp-route-onlyLowStock="@currentOnlyLowStock">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

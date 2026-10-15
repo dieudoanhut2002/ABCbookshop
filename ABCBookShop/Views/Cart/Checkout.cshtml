@@ -1,0 +1,132 @@
+@model PublicCheckoutDto
+@{
+    ViewData["Title"] = "Thanh toán Đơn hàng Trực tuyến";
+    var cart = ViewBag.Cart as ShoppingCartDto ?? new ShoppingCartDto();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Thanh toán Đơn hàng Trực tuyến</h2>
+        <p class="text-muted small mb-0">Vui lòng điền thông tin người nhận và chọn hình thức thanh toán.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại giỏ hàng
+    </a>
+</div>
+
+<form asp-action="Checkout" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="row g-4">
+        <!-- Thông tin giao hàng & Thanh toán -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 fw-bold">
+                    <i class="bi bi-person-lines-fill text-primary me-2"></i>1. Thông tin người nhận hàng
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label fw-semibold">Họ và tên người nhận <span class="text-danger">*</span></label>
+                        <input asp-for="FullName" class="form-control" placeholder="VD: Nguyễn Văn An" required />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="0901234567" required />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">Email nhận thông báo</label>
+                            <input asp-for="Email" class="form-control" placeholder="an.nguyen@email.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ShippingAddress" class="form-label fw-semibold">Địa chỉ giao hàng chi tiết <span class="text-danger">*</span></label>
+                        <input asp-for="ShippingAddress" class="form-control" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành..." required />
+                        <span asp-validation-for="ShippingAddress" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label fw-semibold">Ghi chú giao hàng (tùy chọn)</label>
+                        <textarea asp-for="Note" class="form-control" rows="2" placeholder="Giao giờ hành chính, gọi trước khi giao..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hình thức thanh toán -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 fw-bold">
+                    <i class="bi bi-wallet2 text-primary me-2"></i>2. Phương thức thanh toán
+                </div>
+                <div class="card-body">
+                    <div class="form-check p-3 border rounded mb-3">
+                        <input class="form-check-input ms-0 me-3" type="radio" asp-for="PaymentMethod" value="@PaymentMethod.VietQR" id="payVietQr" checked />
+                        <label class="form-check-label fw-bold d-block" for="payVietQr">
+                            <i class="bi bi-qr-code text-info me-1"></i> Chuyển khoản nhanh qua VietQR (Khuyên dùng)
+                            <small class="d-block text-muted fw-normal mt-1">Quét mã QR thanh toán tức thì qua bất kỳ ứng dụng ngân hàng hoặc ví điện tử.</small>
+                        </label>
+                    </div>
+
+                    <div class="form-check p-3 border rounded">
+                        <input class="form-check-input ms-0 me-3" type="radio" asp-for="PaymentMethod" value="@PaymentMethod.Cod" id="payCod" />
+                        <label class="form-check-label fw-bold d-block" for="payCod">
+                            <i class="bi bi-cash-coin text-success me-1"></i> Thanh toán tiền mặt khi nhận hàng (COD)
+                            <small class="d-block text-muted fw-normal mt-1">Quý khách thanh toán trực tiếp cho nhân viên giao hàng khi nhận sách.</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tóm tắt đơn hàng -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                <div class="card-header bg-white py-3 fw-bold">
+                    <i class="bi bi-bag-check text-primary me-2"></i>Đơn hàng (@cart.TotalItemCount sản phẩm)
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                        @foreach (var item in cart.Items)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <div class="fw-semibold text-truncate" style="max-width: 250px;">@item.Title</div>
+                                    <small class="text-muted">SL: @item.Quantity.ToString("N0") x @item.UnitPrice.ToString("N0") ₫</small>
+                                </div>
+                                <span class="fw-bold">@item.LineTotal.ToString("N0") ₫</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Tạm tính:</span>
+                        <span>@cart.SubTotal.ToString("N0") ₫</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Phí giao hàng:</span>
+                        <span class="text-success fw-semibold">Miễn phí</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold fs-5">TỔNG THANH TOÁN:</span>
+                        <span class="fs-4 fw-bold text-danger">@cart.TotalAmount.ToString("N0") ₫</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow">
+                        <i class="bi bi-check-circle-fill me-1"></i> XÁC NHẬN ĐẶT HÀNG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

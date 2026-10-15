@@ -1,0 +1,181 @@
+@model StoreProfitLossDto
+@{
+    ViewData["Title"] = "Báo cáo Kết quả Hoạt động Kinh doanh (P&L)";
+    var stores = ViewBag.Stores as List<Store> ?? new List<Store>();
+    var currentStoreId = ViewBag.CurrentStoreId as Guid?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Báo cáo Kết quả Kinh doanh & Lợi nhuận (P&L)</h2>
+        <p class="text-muted small mb-0">Phân tích toàn diện: Doanh thu, Giá vốn (COGS), Lợi nhuận gộp, Chi phí vận hành (OPEX) và Lợi nhuận thuần.</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-receipt me-1"></i> Quản lý Phiếu chi OPEX
+        </a>
+        <a asp-action="ExportProfitLossExcel"
+           asp-route-storeId="@currentStoreId"
+           asp-route-fromDate="@ViewBag.CurrentFromDate"
+           asp-route-toDate="@ViewBag.CurrentToDate"
+           class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Báo cáo Excel
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="storeId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Toàn bộ hệ thống chuỗi (Consolidated) --</option>
+                    @foreach (var s in stores)
+                    {
+                        <!option value="@s.Id" @(currentStoreId == s.Id ? "selected" : "")>@s.Name</!option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="fromDate" value="@ViewBag.CurrentFromDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="toDate" value="@ViewBag.CurrentToDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary flex-fill">
+                    <i class="bi bi-arrow-repeat me-1"></i> Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">1. Doanh thu thuần</div>
+                <div class="fs-4 fw-bold text-primary">@Model.GrossRevenue.ToString("N0") ₫</div>
+                <div class="text-muted small">Từ @Model.TotalOrdersCount đơn / @Model.TotalItemsSold.ToString("N0") sản phẩm</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm border-start border-4 border-success">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">2. Lợi nhuận gộp (GP)</div>
+                <div class="fs-4 fw-bold text-success">@Model.GrossProfit.ToString("N0") ₫</div>
+                <div class="text-success small fw-semibold">Biên LN gộp: @Model.GrossMarginPercent%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm border-start border-4 border-warning">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">3. Chi phí vận hành (OPEX)</div>
+                <div class="fs-4 fw-bold text-warning">@Model.TotalOperatingExpenses.ToString("N0") ₫</div>
+                <div class="text-muted small">Mặt bằng, điện nước, nhân sự...</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm border-start border-4 @(Model.OperatingProfit >= 0 ? "border-info" : "border-danger")">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-semibold">4. Lợi nhuận kinh doanh</div>
+                <div class="fs-4 fw-bold @(Model.OperatingProfit >= 0 ? "text-primary" : "text-danger")">
+                    @Model.OperatingProfit.ToString("N0") ₫
+                </div>
+                <div class="small fw-semibold @(Model.OperatingProfit >= 0 ? "text-primary" : "text-danger")">
+                    Biên LN thuần: @Model.OperatingMarginPercent%
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed P&L Statement -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold">
+            <i class="bi bi-file-earmark-spreadsheet-fill text-primary me-2"></i>
+            Báo cáo Kết quả Kinh doanh chi tiết: @Model.StoreName
+        </h5>
+        <small class="text-muted">Kỳ: Từ @Model.FromDate.ToString("dd/MM/yyyy") đến @Model.ToDate.ToString("dd/MM/yyyy")</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 50%;">CHỈ TIÊU TÀI CHÍNH</th>
+                    <th style="width: 25%;" class="text-end">SỐ TIỀN (VNĐ)</th>
+                    <th style="width: 25%;" class="text-end">TỶ LỆ TRÊN DOANH THU (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="table-light fw-bold">
+                    <td>1. TỔNG DOANH THU BÁN LẺ THUẦN</td>
+                    <td class="text-end fs-5 text-primary">@Model.GrossRevenue.ToString("N0") ₫</td>
+                    <td class="text-end">100.00%</td>
+                </tr>
+                <tr>
+                    <td class="ps-4 text-muted">- Doanh thu từ hóa đơn quầy POS & Online</td>
+                    <td class="text-end text-muted">@Model.GrossRevenue.ToString("N0") ₫</td>
+                    <td class="text-end text-muted">100.00%</td>
+                </tr>
+                <tr>
+                    <td class="ps-4 text-muted">- Tổng số lượng sản phẩm bán ra</td>
+                    <td class="text-end text-muted">@Model.TotalItemsSold.ToString("N0") món</td>
+                    <td class="text-end text-muted">---</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">2. GIÁ VỐN HÀNG BÁN (COGS)</td>
+                    <td class="text-end fw-semibold text-danger">@Model.CostOfGoodsSold.ToString("N0") ₫</td>
+                    <td class="text-end">@(Model.GrossRevenue > 0 ? ((Model.CostOfGoodsSold / Model.GrossRevenue) * 100).ToString("N2") : "0.00")%</td>
+                </tr>
+                <tr class="table-success fw-bold">
+                    <td>3. LỢI NHUẬN GỘP (GROSS PROFIT) = (1) - (2)</td>
+                    <td class="text-end fs-5 text-success">@Model.GrossProfit.ToString("N0") ₫</td>
+                    <td class="text-end fs-6">@Model.GrossMarginPercent.ToString("N2")%</td>
+                </tr>
+                <tr class="table-light fw-bold">
+                    <td colspan="3">4. CHI PHÍ VẬN HÀNH (OPEX)</td>
+                </tr>
+                @if (Model.ExpenseBreakdownByCategory.Any())
+                {
+                    @foreach (var kvp in Model.ExpenseBreakdownByCategory)
+                    {
+                        var expPct = Model.GrossRevenue > 0 ? (kvp.Value / Model.GrossRevenue) * 100 : 0;
+                        <tr>
+                            <td class="ps-4">- @kvp.Key</td>
+                            <td class="text-end">@kvp.Value.ToString("N0") ₫</td>
+                            <td class="text-end">@expPct.ToString("N2")%</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="ps-4 text-muted small">Chưa phát sinh phiếu chi phí vận hành nào trong kỳ.</td>
+                    </tr>
+                }
+                <tr class="fw-semibold text-warning-emphasis">
+                    <td>TỔNG CHI PHÍ VẬN HÀNH (OPEX)</td>
+                    <td class="text-end text-danger fw-bold">@Model.TotalOperatingExpenses.ToString("N0") ₫</td>
+                    <td class="text-end">@(Model.GrossRevenue > 0 ? ((Model.TotalOperatingExpenses / Model.GrossRevenue) * 100).ToString("N2") : "0.00")%</td>
+                </tr>
+                <tr class="table-primary fw-bold">
+                    <td>5. LỢI NHUẬN THUẦN HOẠT ĐỘNG KINH DOANH (OPERATING PROFIT) = (3) - (4)</td>
+                    <td class="text-end fs-4 @(Model.OperatingProfit >= 0 ? "text-primary" : "text-danger")">
+                        @Model.OperatingProfit.ToString("N0") ₫
+                    </td>
+                    <td class="text-end fs-5 @(Model.OperatingProfit >= 0 ? "text-primary" : "text-danger")">
+                        @Model.OperatingMarginPercent.ToString("N2")%
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

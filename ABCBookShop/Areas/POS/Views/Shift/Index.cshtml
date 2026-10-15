@@ -1,0 +1,170 @@
+@model List<ShiftDetailDto>
+@{
+    ViewData["Title"] = "Quản lý Ca làm việc Thu ngân & Đối soát két tiền POS";
+    var stores = ViewBag.Stores as List<Store> ?? new List<Store>();
+    var currentStoreId = ViewBag.CurrentStoreId as Guid?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Quản lý Ca làm việc Thu ngân & Đối soát két tiền POS</h2>
+        <p class="text-muted small mb-0">Theo dõi doanh thu từng ca, chênh lệch tiền mặt kiểm đếm, tự động hóa gửi báo cáo Telegram & Email qua Hangfire.</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Open" class="btn btn-outline-primary">
+            <i class="bi bi-clock-history me-1"></i> Mở ca POS mới
+        </a>
+        <a asp-area="POS" asp-controller="Terminal" asp-action="Index" class="btn btn-success">
+            <i class="bi bi-calculator me-1"></i> Vào màn hình Bán hàng POS
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="storeId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả cửa hàng trong chuỗi --</option>
+                    @foreach (var s in stores)
+                    {
+                        <!option value="@s.Id" @(currentStoreId == s.Id ? "selected" : "")>@s.Code - @s.Name</!option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shift List Table -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã phiên ca</th>
+                    <th>Cửa hàng / Quầy</th>
+                    <th>Thu ngân</th>
+                    <th>Thời gian mở - đóng</th>
+                    <th class="text-end">Tiền đầu ca</th>
+                    <th class="text-end">Doanh thu ca</th>
+                    <th class="text-end">Két dự kiến</th>
+                    <th class="text-end">Thực kiểm đếm</th>
+                    <th class="text-end">Chênh lệch</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="11" class="text-center py-4 text-muted">
+                            Chưa có dữ liệu ca làm việc nào.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@s.Id" class="fw-bold font-monospace text-primary text-decoration-none">
+                                    @s.ShiftCode
+                                </a>
+                            </td>
+                            <td>
+                                <div><strong>@s.StoreName</strong></div>
+                                <small class="text-muted"><i class="bi bi-display me-1"></i>@s.RegisterCode</small>
+                            </td>
+                            <td>
+                                <i class="bi bi-person me-1 text-muted"></i>@s.StaffName
+                            </td>
+                            <td>
+                                <div class="small">Mở: @s.OpenedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                <div class="small text-muted">Đóng: @(s.ClosedAt.HasValue ? s.ClosedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "---")</div>
+                            </td>
+                            <td class="text-end">@s.OpeningCash.ToString("N0") ₫</td>
+                            <td class="text-end fw-bold text-success">@s.TotalRevenue.ToString("N0") ₫</td>
+                            <td class="text-end text-primary">@s.ExpectedCash.ToString("N0") ₫</td>
+                            <td class="text-end fw-semibold">
+                                @(s.ActualCashCounted.HasValue ? s.ActualCashCounted.Value.ToString("N0") + " ₫" : "---")
+                            </td>
+                            <td class="text-end">
+                                @if (s.Status == ShiftStatus.Open)
+                                {
+                                    <span class="text-muted">Đang bán</span>
+                                }
+                                else if (s.CashDiscrepancy == 0)
+                                {
+                                    <span class="badge bg-success-subtle text-success">Khớp 100%</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger fw-bold" title="@s.DiscrepancyReason">
+                                        @s.CashDiscrepancy.ToString("+0;-#") ₫
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (s.Status == ShiftStatus.Open)
+                                {
+                                    <span class="badge bg-primary"><i class="bi bi-play-circle me-1"></i>Đang mở</span>
+                                }
+                                else if (s.Status == ShiftStatus.Closed)
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Đã đóng (Chờ duyệt)</span>
+                                }
+                                else if (s.Status == ShiftStatus.Approved)
+                                {
+                                    <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Đã duyệt</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    @if (s.Status == ShiftStatus.Open)
+                                    {
+                                        <a asp-area="POS" asp-controller="Terminal" asp-action="Index" asp-route-registerId="@s.RegisterId" class="btn btn-outline-success" title="Vào bán hàng">
+                                            <i class="bi bi-cart"></i>
+                                        </a>
+                                        <a asp-action="Close" asp-route-id="@s.Id" class="btn btn-outline-warning" title="Đóng ca">
+                                            <i class="bi bi-lock"></i>
+                                        </a>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-outline-info" title="Xem chi tiết đối soát">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="ExportExcel" asp-route-id="@s.Id" class="btn btn-outline-secondary" title="Xuất báo cáo Excel">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

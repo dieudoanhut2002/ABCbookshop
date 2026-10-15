@@ -1,0 +1,74 @@
+@model Order
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+    var payment = Model.Payments.FirstOrDefault();
+    var isVietQr = payment?.PaymentMethod == PaymentMethod.VietQR;
+    var qrInfo = $"ABC {Model.OrderNumber}";
+    var qrUrl = $"https://img.vietqr.io/image/VCB-9876543210-compact2.png?amount={Model.TotalAmount:0}&addInfo={Uri.EscapeDataString(qrInfo)}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-7">
+        <div class="card border-0 shadow-sm mt-3 mb-4">
+            <div class="card-body p-4 text-center">
+                <div class="text-success mb-3">
+                    <i class="bi bi-check-circle-fill display-3"></i>
+                </div>
+                <h3 class="fw-bold mb-1">ĐẶT HÀNG THÀNH CÔNG!</h3>
+                <p class="text-muted small">Cảm ơn Quý khách đã mua sách tại ABCBookShop. Đơn hàng của bạn đã được tiếp nhận và đang được đóng gói chuyển đi.</p>
+
+                <div class="bg-light p-3 rounded mb-4 text-start font-monospace small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Mã đơn hàng:</span>
+                        <strong class="text-primary fs-6">@Model.OrderNumber</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Ngày đặt:</span>
+                        <span>@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Người nhận:</span>
+                        <span>@Model.Customer?.FullName (@Model.Customer?.PhoneNumber)</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Hình thức thanh toán:</span>
+                        <span class="badge bg-secondary">@payment?.PaymentMethod</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-2">
+                        <span class="fw-bold">Tổng thanh toán:</span>
+                        <span class="fw-bold text-danger fs-5">@Model.TotalAmount.ToString("N0") ₫</span>
+                    </div>
+                </div>
+
+                @if (isVietQr)
+                {
+                    <div class="card border-info bg-light p-4 mb-4">
+                        <h5 class="fw-bold text-primary mb-2"><i class="bi bi-qr-code me-2"></i>Hướng dẫn thanh toán chuyển khoản VietQR</h5>
+                        <p class="small text-muted mb-3">Quý khách mở ứng dụng Ngân hàng (VCB, VietinBank, Techcombank, MoMo...) và quét mã bên dưới để hoàn tất:</p>
+
+                        <div class="text-center mb-3">
+                            <img src="@qrUrl" alt="VietQR" class="img-fluid rounded border shadow-sm bg-white p-2" style="max-height: 230px;" />
+                        </div>
+
+                        <div class="small text-start bg-white p-3 rounded border">
+                            <div class="mb-1">Ngân hàng: <strong>Vietcombank (VCB)</strong></div>
+                            <div class="mb-1">Số tài khoản: <strong class="text-primary">9876543210</strong></div>
+                            <div class="mb-1">Tên tài khoản: <strong>CONG TY CO PHAN PHAT HANH SACH ABC</strong></div>
+                            <div class="mb-1">Số tiền: <strong class="text-danger">@Model.TotalAmount.ToString("N0") ₫</strong></div>
+                            <div>Nội dung CK: <strong class="text-success font-monospace">@qrInfo</strong></div>
+                        </div>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-center gap-2">
+                    <a asp-controller="Home" asp-action="Books" class="btn btn-primary px-4 fw-semibold">
+                        <i class="bi bi-book me-1"></i> Tiếp tục mua sách
+                    </a>
+                    <a asp-controller="Home" asp-action="OrderTracking" asp-route-orderNumber="@Model.OrderNumber" asp-route-phone="@Model.Customer?.PhoneNumber" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-truck me-1"></i> Theo dõi đơn hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

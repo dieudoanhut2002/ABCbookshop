@@ -1,0 +1,127 @@
+@model ShiftCloseDto
+@{
+    ViewData["Title"] = "Đóng ca & Kiểm đếm két tiền POS";
+    var shift = ViewBag.Shift as ShiftDetailDto;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-warning text-dark py-3 text-center">
+                <i class="bi bi-lock-fill fs-1 mb-1 d-block"></i>
+                <h4 class="card-title mb-0 fw-bold">ĐÓNG CA & ĐỐI SOÁT KÉT TIỀN POS</h4>
+                <small>Phiên ca: <strong>@shift?.ShiftCode</strong> | Quầy: <strong>@shift?.RegisterCode</strong></small>
+            </div>
+            <div class="card-body p-4">
+                <!-- Financial snapshot -->
+                <div class="bg-light p-3 rounded mb-4">
+                    <div class="row g-2 text-center">
+                        <div class="col-4 border-end">
+                            <small class="text-muted d-block">Tiền đầu ca</small>
+                            <strong class="fs-6">@shift?.OpeningCash.ToString("N0") ₫</strong>
+                        </div>
+                        <div class="col-4 border-end">
+                            <small class="text-muted d-block">Doanh thu tiền mặt</small>
+                            <strong class="fs-6 text-success">@shift?.TotalCashSales.ToString("N0") ₫</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Tiền két dự kiến</small>
+                            <strong class="fs-5 text-primary" id="expectedCashVal" data-val="@shift?.ExpectedCash">@shift?.ExpectedCash.ToString("N0") ₫</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <form asp-action="Close" method="post" id="closeForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ShiftId" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="ActualCashCounted" class="form-label fw-semibold">
+                            Tiền mặt thực tế kiểm đếm trong két (VNĐ) <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="ActualCashCounted" class="form-control text-end fs-4 fw-bold text-success"
+                               type="number" step="1000" id="actualInput" required oninput="calcDifference()" />
+                        <span asp-validation-for="ActualCashCounted" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Live difference badge -->
+                    <div class="p-3 mb-3 rounded border text-center" id="diffBox">
+                        <span class="text-muted small d-block">Chênh lệch tiền mặt kiểm đếm (Thực tế - Dự kiến)</span>
+                        <div class="fs-4 fw-bold" id="diffText">0 ₫</div>
+                    </div>
+
+                    <!-- Explanation field -->
+                    <div class="mb-3" id="reasonGroup">
+                        <label asp-for="DiscrepancyReason" class="form-label fw-semibold" id="reasonLabel">
+                            Giải trình chênh lệch tiền két
+                        </label>
+                        <textarea asp-for="DiscrepancyReason" class="form-control" rows="3" id="reasonInput"
+                                  placeholder="Nhập lý do chênh lệch (VD: Khách chuyển khoản nhầm, làm tròn tiền lẻ, nhầm mệnh giá...)"></textarea>
+                        <div class="form-text text-danger d-none" id="reasonRequiredWarning">
+                            <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                            Chênh lệch vượt quá 50,000 ₫. Quy định yêu cầu thu ngân bắt buộc phải giải trình trước khi đóng ca!
+                        </div>
+                        <span asp-validation-for="DiscrepancyReason" class="text-danger small"></span>
+                    </div>
+
+                    <div class="alert alert-secondary py-2 small mb-4">
+                        <i class="bi bi-send-check me-1"></i>
+                        Khi bấm Đóng ca, hệ thống Hangfire sẽ tự động xuất báo cáo Excel và gửi thông báo tức thì tới nhóm Telegram Ban quản lý & Email Quản lý cửa hàng.
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 py-2 fw-bold fs-5 text-dark" id="btnSubmitClose">
+                        <i class="bi bi-lock-fill me-1"></i> Xác nhận đóng ca & Khóa phiên
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Hủy bỏ</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const expectedCash = parseFloat(document.getElementById('expectedCashVal').getAttribute('data-val')) || 0;
+
+        function calcDifference() {
+            const actual = parseFloat(document.getElementById('actualInput').value) || 0;
+            const diff = actual - expectedCash;
+            const diffText = document.getElementById('diffText');
+            const diffBox = document.getElementById('diffBox');
+            const reasonInput = document.getElementById('reasonInput');
+            const reasonRequiredWarning = document.getElementById('reasonRequiredWarning');
+            const reasonLabel = document.getElementById('reasonLabel');
+
+            if (diff === 0) {
+                diffText.innerText = '0 ₫ (Khớp 100%)';
+                diffText.className = 'fs-4 fw-bold text-success';
+                diffBox.className = 'p-3 mb-3 rounded border border-success bg-success-subtle text-center';
+                reasonRequiredWarning.classList.add('d-none');
+                reasonInput.removeAttribute('required');
+                reasonLabel.innerHTML = 'Giải trình chênh lệch tiền két (tùy chọn)';
+            } else if (diff > 0) {
+                diffText.innerText = '+' + diff.toLocaleString('vi-VN') + ' ₫ (Thừa tiền)';
+                diffText.className = 'fs-4 fw-bold text-warning';
+                diffBox.className = 'p-3 mb-3 rounded border border-warning bg-warning-subtle text-center';
+            } else {
+                diffText.innerText = diff.toLocaleString('vi-VN') + ' ₫ (Thiếu tiền)';
+                diffText.className = 'fs-4 fw-bold text-danger';
+                diffBox.className = 'p-3 mb-3 rounded border border-danger bg-danger-subtle text-center';
+            }
+
+            if (Math.Abs ? Math.abs(diff) > 50000 : Math.abs(diff) > 50000) {
+                reasonRequiredWarning.classList.remove('d-none');
+                reasonInput.setAttribute('required', 'required');
+                reasonLabel.innerHTML = 'Giải trình chênh lệch tiền két <span class="text-danger">* (Bắt buộc)</span>';
+            } else {
+                reasonRequiredWarning.classList.add('d-none');
+                reasonInput.removeAttribute('required');
+                reasonLabel.innerHTML = 'Giải trình chênh lệch tiền két (tùy chọn)';
+            }
+        }
+
+        calcDifference();
+    </script>
+}

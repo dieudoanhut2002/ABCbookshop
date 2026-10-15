@@ -1,0 +1,336 @@
+@model PagedResult<ProductDto>
+@{
+    ViewData["Title"] = "Quản lý Danh mục & Sản phẩm";
+    var filter = ViewBag.CurrentFilter as ProductFilterDto ?? new ProductFilterDto();
+    var categories = ViewBag.Categories as List<CategoryDto> ?? new List<CategoryDto>();
+}
+
+<div class="container-fluid py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-0 text-primary"><i class="bi bi-book-half me-2"></i>Quản lý Danh mục & Sản phẩm</h3>
+            <small class="text-muted">Quản lý sách, văn phòng phẩm, quà lưu niệm, chính sách giá và tồn kho toàn chuỗi</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Thêm sản phẩm mới
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Excel & Tiện ích
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li>
+                        <a class="dropdown-item" asp-action="DownloadTemplate">
+                            <i class="bi bi-download text-primary me-2"></i>Tải file mẫu Excel chuẩn
+                        </a>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                            <i class="bi bi-upload text-success me-2"></i>Nhập sản phẩm từ Excel...
+                        </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" asp-action="ExportExcel"
+                           asp-route-Keyword="@filter.Keyword"
+                           asp-route-CategoryId="@filter.CategoryId"
+                           asp-route-ProductType="@filter.ProductType">
+                            <i class="bi bi-file-earmark-arrow-down text-info me-2"></i>Xuất toàn bộ ra file Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông báo Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["WarningMessage"]
+            @if (TempData["HasErrorReport"] != null)
+            {
+                <a asp-action="DownloadLastErrorReport" class="btn btn-sm btn-danger ms-3">
+                    <i class="bi bi-download me-1"></i>Tải file báo cáo lỗi chi tiết (.xlsx)
+                </a>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+            @if (TempData["HasErrorReport"] != null)
+            {
+                <a asp-action="DownloadLastErrorReport" class="btn btn-sm btn-outline-danger ms-3">
+                    <i class="bi bi-download me-1"></i>Tải file báo cáo lỗi chi tiết (.xlsx)
+                </a>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Thanh Lọc & Tìm Kiếm -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body bg-light rounded">
+            <form method="get" asp-action="Index" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="Keyword" value="@filter.Keyword" class="form-control" placeholder="Tên, SKU, Barcode, ISBN, Tác giả..." />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="CategoryId" class="form-select">
+                        <option value="">-- Tất cả danh mục --</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id" selected="@(filter.CategoryId == cat.Id)">@cat.Name (@cat.ProductsCount)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="ProductType" class="form-select">
+                        <option value="">-- Loại mặt hàng --</option>
+                        <option value="1" selected="@(filter.ProductType == ProductType.Book)">Sách</option>
+                        <option value="2" selected="@(filter.ProductType == ProductType.Stationery)">Văn phòng phẩm</option>
+                        <option value="3" selected="@(filter.ProductType == ProductType.Souvenir)">Quà lưu niệm</option>
+                        <option value="4" selected="@(filter.ProductType == ProductType.OtherRetail)">Khác</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch pt-2">
+                        <input class="form-check-input" type="checkbox" name="OnlyLowStock" value="true" id="lowStockCheck" @(filter.OnlyLowStock == true ? "checked" : "") />
+                        <label class="form-check-label text-danger fw-bold" for="lowStockCheck">
+                            <i class="bi bi-exclamation-circle me-1"></i>Tồn kho thấp
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex gap-2 justify-content-end">
+                    <button type="submit" class="btn btn-primary px-3">
+                        <i class="bi bi-funnel me-1"></i>Lọc
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bảng Dữ Liệu Sản Phẩm -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3" style="width: 120px;">Mã SKU</th>
+                            <th style="width: 140px;">Mã vạch (Barcode)</th>
+                            <th>Tên sản phẩm / Thông tin Sách</th>
+                            <th>Danh mục</th>
+                            <th>Loại hàng</th>
+                            <th class="text-end">Giá vốn</th>
+                            <th class="text-end">Giá bán</th>
+                            <th class="text-center">VAT</th>
+                            <th class="text-center">Tồn khả dụng</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center pe-3" style="width: 120px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items == null || !Model.Items.Any())
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Không tìm thấy sản phẩm nào phù hợp với điều kiện tìm kiếm.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                var isLowStock = item.TotalStockQuantity <= item.LowStockThreshold;
+                                <tr>
+                                    <td class="ps-3 fw-bold text-secondary">@item.SKU</td>
+                                    <td>
+                                        <span class="font-monospace fw-semibold bg-light px-2 py-1 rounded border">@item.Barcode</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.Title</div>
+                                        @if (item.IsBook && item.BookDetail != null)
+                                        {
+                                            <small class="text-muted">
+                                                <i class="bi bi-pen me-1"></i>@(string.IsNullOrWhiteSpace(item.BookDetail.Author) ? "Chưa rõ" : item.BookDetail.Author)
+                                                @if (!string.IsNullOrWhiteSpace(item.BookDetail.Publisher))
+                                                {
+                                                    <span class="mx-1">•</span><i class="bi bi-building me-1"></i>@item.BookDetail.Publisher
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(item.BookDetail.ISBN))
+                                                {
+                                                    <span class="mx-1">•</span><span>ISBN: @item.BookDetail.ISBN</span>
+                                                }
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">ĐVT: @item.Unit</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@item.CategoryName</span>
+                                    </td>
+                                    <td>
+                                        @switch (item.ProductType)
+                                        {
+                                            case ProductType.Book:
+                                                <span class="badge bg-primary"><i class="bi bi-book me-1"></i>Sách</span>
+                                                break;
+                                            case ProductType.Stationery:
+                                                <span class="badge bg-info text-dark"><i class="bi bi-pencil me-1"></i>Văn phòng phẩm</span>
+                                                break;
+                                            case ProductType.Souvenir:
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-gift me-1"></i>Quà lưu niệm</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-dark">Khác</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end font-monospace text-muted">@item.CostPrice.ToString("N0") đ</td>
+                                    <td class="text-end font-monospace fw-bold text-success">@item.SellingPrice.ToString("N0") đ</td>
+                                    <td class="text-center font-monospace small">@item.VatRate%</td>
+                                    <td class="text-center">
+                                        @if (isLowStock)
+                                        {
+                                            <span class="badge bg-danger p-2" title="Cảnh báo: Dưới ngưỡng tồn tối thiểu (@item.LowStockThreshold)">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>@item.TotalStockQuantity.ToString("N0") @item.Unit
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success p-2">
+                                                @item.TotalStockQuantity.ToString("N0") @item.Unit
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Kinh doanh</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Tạm ngừng</span>
+                                        }
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa sản phẩm">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <form method="post" asp-action="ToggleStatus" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn đổi trạng thái sản phẩm này?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")" title="@(item.IsActive ? "Tạm ngừng kinh doanh" : "Kích hoạt kinh doanh")">
+                                                    <i class="bi @(item.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phân trang (Pagination) -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted">
+                    Hiển thị <strong>@((Model.PageIndex - 1) * Model.PageSize + 1)</strong> đến <strong>@(Math.Min(Model.PageIndex * Model.PageSize, Model.TotalCount))</strong> trong tổng số <strong>@Model.TotalCount</strong> sản phẩm
+                </small>
+                <nav aria-label="Product Page Navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-PageIndex="@(Model.PageIndex - 1)"
+                               asp-route-Keyword="@filter.Keyword"
+                               asp-route-CategoryId="@filter.CategoryId"
+                               asp-route-ProductType="@filter.ProductType"
+                               asp-route-OnlyLowStock="@filter.OnlyLowStock">Trước</a>
+                        </li>
+                        @for (int p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.PageIndex ? "active" : "")">
+                                <a class="page-link" asp-action="Index"
+                                   asp-route-PageIndex="@p"
+                                   asp-route-Keyword="@filter.Keyword"
+                                   asp-route-CategoryId="@filter.CategoryId"
+                                   asp-route-ProductType="@filter.ProductType"
+                                   asp-route-OnlyLowStock="@filter.OnlyLowStock">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-PageIndex="@(Model.PageIndex + 1)"
+                               asp-route-Keyword="@filter.Keyword"
+                               asp-route-CategoryId="@filter.CategoryId"
+                               asp-route-ProductType="@filter.ProductType"
+                               asp-route-OnlyLowStock="@filter.OnlyLowStock">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Nhập Excel -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-action="ImportExcel" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="importExcelModalLabel"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Nhập Danh mục từ File Excel</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">
+                        Hệ thống hỗ trợ nhập hàng loạt sản phẩm từ file Excel định dạng <code>.xlsx</code>.
+                        Nếu sản phẩm để trống mã vạch, hệ thống sẽ <strong>tự động sinh mã Barcode duy nhất</strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn file Excel (.xlsx):</label>
+                        <input type="file" name="excelFile" class="form-control" accept=".xlsx" required />
+                    </div>
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Bạn chưa có mẫu file?
+                        <a asp-action="DownloadTemplate" class="fw-bold text-primary">Tải mẫu Excel chuẩn tại đây</a>.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-1"></i>Bắt đầu Kiểm tra & Nhập dữ liệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

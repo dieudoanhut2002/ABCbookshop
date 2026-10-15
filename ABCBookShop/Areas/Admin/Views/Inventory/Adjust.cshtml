@@ -1,0 +1,119 @@
+@model StockAdjustmentDto
+@{
+    ViewData["Title"] = "Kiểm Kê & Điều Chỉnh Tồn Kho";
+    var warehouses = ViewBag.Warehouses as List<WarehouseDto> ?? new List<WarehouseDto>();
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+}
+
+<div class="container-fluid py-3">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Quản lý tồn kho</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Kiểm kê & Điều chỉnh kho</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-danger mb-0"><i class="bi bi-sliders me-2"></i>Kiểm Kê & Điều Chỉnh Tồn Kho</h3>
+            <small class="text-muted">Ghi nhận xuất hủy do hư hỏng, thất thoát hoặc điều chỉnh chênh lệch sau kiểm kê thực tế</small>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h6 class="alert-heading fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi nhập liệu:</h6>
+            <div asp-validation-summary="All" class="text-danger small mb-0"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="post" asp-action="Adjust" id="adjustForm">
+                @Html.AntiForgeryToken()
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title text-dark mb-0"><i class="bi bi-pencil-square text-danger me-2"></i>Phiếu Ghi Nhận Điều Chỉnh</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="WarehouseId" class="form-label fw-bold">Kho Hàng Phát Sinh <span class="text-danger">*</span></label>
+                                <select asp-for="WarehouseId" class="form-select form-select-lg" required>
+                                    <option value="">-- Chọn kho hàng --</option>
+                                    @foreach (var wh in warehouses)
+                                    {
+                                        <option value="@wh.Id" selected="@(Model.WarehouseId == wh.Id)">@wh.Name (@wh.StoreName)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProductId" class="form-label fw-bold">Sản Phẩm Cần Điều Chỉnh <span class="text-danger">*</span></label>
+                                <select asp-for="ProductId" class="form-select form-select-lg" required>
+                                    <option value="">-- Chọn sản phẩm --</option>
+                                    @foreach (var p in products)
+                                    {
+                                        <option value="@p.Id" selected="@(Model.ProductId == p.Id)">@p.Title (SKU: @p.SKU)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="AdjustmentType" class="form-label fw-bold">Loại nghiệp vụ điều chỉnh</label>
+                                <select asp-for="AdjustmentType" class="form-select">
+                                    <option value="6">Xuất hủy do hư hỏng / rách nát / thất thoát</option>
+                                    <option value="7">Điều chỉnh sau kiểm kê định kỳ</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Hướng điều chỉnh</label>
+                                <div class="pt-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" asp-for="IsReduction" value="true" id="radReduction" checked />
+                                        <label class="form-check-label text-danger fw-bold" for="radReduction">
+                                            <i class="bi bi-dash-circle me-1"></i>Giảm tồn kho (Hư hỏng / Mất)
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" asp-for="IsReduction" value="false" id="radIncrease" />
+                                        <label class="form-check-label text-success fw-bold" for="radIncrease">
+                                            <i class="bi bi-plus-circle me-1"></i>Tăng tồn kho (Kiểm kê thừa)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Quantity" class="form-label fw-bold">Số lượng điều chỉnh <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="Quantity" type="number" step="1" min="1" class="form-control form-control-lg text-center font-monospace fw-bold fs-5" required />
+                                    <span class="input-group-text">sản phẩm</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Reason" class="form-label fw-bold">Lý do điều chỉnh / Biên bản kiểm kê <span class="text-danger">*</span></label>
+                                <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Nhập chi tiết biên bản kiểm kê, số quyết định phê duyệt xuất hủy..." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light p-3 d-flex justify-content-between align-items-center">
+                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Biến động này sẽ được lưu bất biến vào Sổ cái và AuditLog hệ thống.</small>
+                        <button type="submit" class="btn btn-danger px-4 py-2 fs-6">
+                            <i class="bi bi-check2-circle me-1"></i>Xác Nhận & Hạch Toán Sổ Cái
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

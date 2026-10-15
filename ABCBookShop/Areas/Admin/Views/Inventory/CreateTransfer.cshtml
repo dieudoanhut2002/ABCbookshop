@@ -1,0 +1,131 @@
+@model TransferOrderCreateDto
+@{
+    ViewData["Title"] = "Lập Phiếu Điều Chuyển Hàng Liên Kho";
+    var warehouses = ViewBag.Warehouses as List<WarehouseDto> ?? new List<WarehouseDto>();
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+}
+
+<div class="container-fluid py-3">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Transfers">Luân chuyển kho</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Lập phiếu mới</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary mb-0"><i class="bi bi-file-earmark-diff me-2"></i>Lập Yêu Cầu Điều Chuyển Hàng</h3>
+            <small class="text-muted">Chọn kho xuất, kho nhận và danh sách các sản phẩm cần luân chuyển giữa các chi nhánh</small>
+        </div>
+        <a asp-action="Transfers" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h6 class="alert-heading fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi nhập liệu:</h6>
+            <div asp-validation-summary="All" class="text-danger small mb-0"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form method="post" asp-action="CreateTransfer" id="transferForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title text-dark mb-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Tuyến Đường Luân Chuyển</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="FromWarehouseId" class="form-label fw-bold">Kho Xuất Gửi (Nguồn) <span class="text-danger">*</span></label>
+                        <select asp-for="FromWarehouseId" class="form-select form-select-lg" required>
+                            <option value="">-- Chọn kho xuất hàng --</option>
+                            @foreach (var wh in warehouses)
+                            {
+                                <option value="@wh.Id">@wh.Name (@wh.StoreName) @(wh.IsCentralWarehouse ? "[Kho Tổng]" : "")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ToWarehouseId" class="form-label fw-bold">Kho Nhập Nhận (Đích) <span class="text-danger">*</span></label>
+                        <select asp-for="ToWarehouseId" class="form-select form-select-lg" required>
+                            <option value="">-- Chọn kho nhận hàng --</option>
+                            @foreach (var wh in warehouses)
+                            {
+                                <option value="@wh.Id">@wh.Name (@wh.StoreName) @(wh.IsCentralWarehouse ? "[Kho Tổng]" : "")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Note" class="form-label fw-bold">Ghi chú yêu cầu điều chuyển</label>
+                        <textarea asp-for="Note" class="form-control" rows="2" placeholder="Lý do điều chuyển (Ví dụ: Bổ sung sách bán chạy cho chi nhánh Quận 1)..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chọn sản phẩm điều chuyển -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title text-dark mb-0"><i class="bi bi-card-checklist text-primary me-2"></i>Danh Sách Sản Phẩm Cần Chuyển</h5>
+                <span class="text-muted small">Nhập số lượng chuyển lớn hơn 0 cho các mặt hàng mong muốn</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 50px;">#</th>
+                                <th>Mã SKU / Barcode</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Đơn vị tính</th>
+                                <th class="text-end">Giá niêm yết</th>
+                                <th class="text-center" style="width: 220px;">Số lượng chuyển</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < products.Count; i++)
+                            {
+                                var p = products[i];
+                                <tr>
+                                    <td class="ps-3 text-muted">@(i + 1)</td>
+                                    <td>
+                                        <span class="fw-bold font-monospace">@p.SKU</span>
+                                        <br /><small class="text-muted font-monospace">@p.Barcode</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark">@p.Title</span>
+                                        @if (p.IsBook && p.BookDetail != null)
+                                        {
+                                            <small class="text-muted d-block">Tác giả: @p.BookDetail.Author</small>
+                                        }
+                                    </td>
+                                    <td>@p.Unit</td>
+                                    <td class="text-end font-monospace text-muted">@p.SellingPrice.ToString("N0") đ</td>
+                                    <td class="text-center">
+                                        <input type="hidden" name="Items[@i].ProductId" value="@p.Id" />
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="1" min="0" value="0" name="Items[@i].Quantity" class="form-control text-center font-monospace fw-bold fs-6" />
+                                            <span class="input-group-text">@p.Unit</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light p-3 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary px-4 py-2 fs-6">
+                    <i class="bi bi-save me-1"></i>Lập Phiếu Điều Chuyển (Dự Thảo)
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

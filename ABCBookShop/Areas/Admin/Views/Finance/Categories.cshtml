@@ -1,0 +1,115 @@
+@model List<ExpenseCategoryDto>
+@{
+    ViewData["Title"] = "Quản lý Nhóm Chi phí Vận hành";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Nhóm Chi phí Vận hành (Expense Categories)</h2>
+        <p class="text-muted small mb-0">Phân loại chi phí chuẩn mực để lập báo cáo P&L và kiểm soát định mức ngân sách chuỗi.</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Danh sách Phiếu chi
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewCategory">
+            <i class="bi bi-plus-circle me-1"></i> Thêm nhóm chi phí mới
+        </button>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã nhóm</th>
+                    <th>Tên nhóm chi phí</th>
+                    <th>Mô tả chi tiết</th>
+                    <th class="text-center">Loại</th>
+                    <th class="text-center">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><span class="badge bg-dark font-monospace">@c.Code</span></td>
+                        <td class="fw-bold">@c.Name</td>
+                        <td><small class="text-muted">@c.Description</small></td>
+                        <td class="text-center">
+                            @if (c.IsDefault)
+                            {
+                                <span class="badge bg-primary">Mặc định hệ thống</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Tự tạo</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (c.IsActive)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Tạm ngưng</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm Nhóm Chi Phí -->
+<div class="modal fade" id="modalNewCategory" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="CreateCategory" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tag-fill text-primary me-2"></i>Thêm Nhóm Chi Phí Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mã nhóm <span class="text-danger">*</span></label>
+                        <input type="text" name="Code" class="form-control" placeholder="VD: EXP_RENT, EXP_UTIL, EXP_MKT" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên nhóm chi phí <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control" placeholder="VD: Thuê mặt bằng, Điện nước & Internet..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả định mức</label>
+                        <textarea name="Description" class="form-control" rows="2" placeholder="Ghi chú quy chế chi tiêu hoặc định mức..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu nhóm chi phí
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

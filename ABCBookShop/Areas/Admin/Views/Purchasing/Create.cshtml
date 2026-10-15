@@ -1,0 +1,247 @@
+@model GoodsReceiptNoteCreateDto
+@{
+    ViewData["Title"] = "Lập phiếu nhập kho từ Nhà cung cấp (GRN)";
+    var providers = ViewBag.Providers as List<ProviderDto> ?? new List<ProviderDto>();
+    var warehouses = ViewBag.Warehouses as List<WarehouseDto> ?? new List<WarehouseDto>();
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold text-gray-800 mb-0">Lập phiếu nhập kho từ Nhà cung cấp (GRN)</h2>
+        <p class="text-muted small mb-0">Hệ thống sẽ tự động cập nhật số dư tồn kho kép và ghi nhận công nợ Nhà cung cấp.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<form asp-action="Create" method="post" id="grnForm">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="row g-4">
+        <!-- Thông tin phiếu nhập -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Thông tin phiếu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="ProviderId" class="form-label fw-semibold">Nhà cung cấp <span class="text-danger">*</span></label>
+                        <select asp-for="ProviderId" class="form-select" required>
+                            <option value="">-- Chọn Nhà cung cấp --</option>
+                            @foreach (var p in providers)
+                            {
+                                <option value="@p.Id">@p.Code - @p.Name (Nợ: @p.OutstandingDebt.ToString("N0") ₫)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ProviderId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="WarehouseId" class="form-label fw-semibold">Kho nhận hàng <span class="text-danger">*</span></label>
+                        <select asp-for="WarehouseId" class="form-select" required>
+                            <option value="">-- Chọn Kho nhận --</option>
+                            @foreach (var w in warehouses)
+                            {
+                                <option value="@w.Id">@w.Code - @w.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SupplierInvoiceNo" class="form-label fw-semibold">Số hóa đơn NCC</label>
+                        <input asp-for="SupplierInvoiceNo" class="form-control" placeholder="VD: HD-2026/894" />
+                        <span asp-validation-for="SupplierInvoiceNo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PaidAmount" class="form-label fw-semibold">Số tiền thanh toán ngay (VNĐ)</label>
+                        <input asp-for="PaidAmount" class="form-control text-end" type="number" step="1000" id="inputPaidAmount" value="0" />
+                        <small class="text-muted">Nhập 0 nếu ghi nhận toàn bộ vào công nợ NCC.</small>
+                        <span asp-validation-for="PaidAmount" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label fw-semibold">Ghi chú nhập hàng</label>
+                        <textarea asp-for="Note" class="form-control" rows="3" placeholder="Nhập ghi chú điều kiện giao nhận, thời hạn thanh toán..."></textarea>
+                        <span asp-validation-for="Note" class="text-danger small"></span>
+                    </div>
+
+                    <hr />
+
+                    <!-- Summary box -->
+                    <div class="bg-light p-3 rounded">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Tổng tiền hàng:</span>
+                            <span class="fw-bold" id="summaryTotal">0 ₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Đã thanh toán:</span>
+                            <span class="fw-bold text-success" id="summaryPaid">0 ₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-top pt-2">
+                            <span class="fw-semibold">Ghi nhận công nợ mới:</span>
+                            <span class="fw-bold text-danger fs-5" id="summaryDebt">0 ₫</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i> Xác nhận hoàn tất nhập kho
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chi tiết hàng hóa nhập -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Danh sách mặt hàng nhập kho</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddRow">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm mặt hàng
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0" id="itemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="min-width: 250px;">Sản phẩm / Sách <span class="text-danger">*</span></th>
+                                    <th style="width: 130px;" class="text-end">Số lượng <span class="text-danger">*</span></th>
+                                    <th style="width: 160px;" class="text-end">Giá nhập (VNĐ) <span class="text-danger">*</span></th>
+                                    <th style="width: 160px;" class="text-end">Thành tiền (VNĐ)</th>
+                                    <th style="width: 60px;" class="text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody">
+                                <tr class="item-row">
+                                    <td>
+                                        <select name="Items[0].ProductId" class="form-select product-select" required onchange="onProductSelected(this, 0)">
+                                            <option value="">-- Chọn sản phẩm --</option>
+                                            @foreach (var prod in products)
+                                            {
+                                                <option value="@prod.Id" data-cost="@prod.CostPrice">@prod.SKU - @prod.Title</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="Items[0].Quantity" class="form-control text-end item-qty" min="1" step="1" value="1" required oninput="recalcRow(this)" />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="Items[0].UnitCost" class="form-control text-end item-cost" min="0" step="500" value="0" required oninput="recalcRow(this)" />
+                                    </td>
+                                    <td class="text-end fw-bold item-subtotal">
+                                        0 ₫
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove" onclick="removeRow(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let rowCount = 1;
+
+        // Template options
+        const productOptions = `@Html.Raw(string.Join("", products.Select(p => $"<option value='{p.Id}' data-cost='{p.CostPrice}'>{p.SKU} - {p.Title.Replace("'", "\\'")}</option>")))`;
+
+        document.getElementById('btnAddRow').addEventListener('click', function () {
+            const index = rowCount++;
+            const tr = document.createElement('tr');
+            tr.className = 'item-row';
+            tr.innerHTML = `
+                <td>
+                    <select name="Items[${index}].ProductId" class="form-select product-select" required onchange="onProductSelected(this, ${index})">
+                        <option value="">-- Chọn sản phẩm --</option>
+                        ${productOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="Items[${index}].Quantity" class="form-control text-end item-qty" min="1" step="1" value="1" required oninput="recalcRow(this)" />
+                </td>
+                <td>
+                    <input type="number" name="Items[${index}].UnitCost" class="form-control text-end item-cost" min="0" step="500" value="0" required oninput="recalcRow(this)" />
+                </td>
+                <td class="text-end fw-bold item-subtotal">
+                    0 ₫
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove" onclick="removeRow(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            document.getElementById('itemsBody').appendChild(tr);
+        });
+
+        function removeRow(btn) {
+            const row = btn.closest('tr');
+            const totalRows = document.querySelectorAll('.item-row').length;
+            if (totalRows <= 1) {
+                alert('Phiếu nhập phải có ít nhất 1 dòng sản phẩm.');
+                return;
+            }
+            row.remove();
+            recalcGrandTotals();
+        }
+
+        function onProductSelected(selectElem, index) {
+            const selectedOpt = selectElem.options[selectElem.selectedIndex];
+            const cost = selectedOpt.getAttribute('data-cost');
+            const row = selectElem.closest('tr');
+            const costInput = row.querySelector('.item-cost');
+            if (cost && parseFloat(cost) > 0) {
+                costInput.value = cost;
+            }
+            recalcRow(costInput);
+        }
+
+        function recalcRow(elem) {
+            const row = elem.closest('tr');
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const cost = parseFloat(row.querySelector('.item-cost').value) || 0;
+            const subtotal = qty * cost;
+            row.querySelector('.item-subtotal').innerText = subtotal.toLocaleString('vi-VN') + ' ₫';
+            recalcGrandTotals();
+        }
+
+        function recalcGrandTotals() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const cost = parseFloat(row.querySelector('.item-cost').value) || 0;
+                total += (qty * cost);
+            });
+
+            const paidInput = document.getElementById('inputPaidAmount');
+            const paid = parseFloat(paidInput.value) || 0;
+            const debt = Math.max(0, total - paid);
+
+            document.getElementById('summaryTotal').innerText = total.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('summaryPaid').innerText = paid.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('summaryDebt').innerText = debt.toLocaleString('vi-VN') + ' ₫';
+        }
+
+        document.getElementById('inputPaidAmount').addEventListener('input', recalcGrandTotals);
+
+        // Initial calc
+        recalcGrandTotals();
+    </script>
+}
